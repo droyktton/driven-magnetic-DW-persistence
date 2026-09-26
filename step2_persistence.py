@@ -1,19 +1,19 @@
-"""Paso 2: persistencia, correlación C(n,tau), longitud xi(tau) y chi4(tau).
+"""Step 2: persistence, correlation C(n,tau), correlation length xi(tau) and chi4(tau).
 
-Uso:  python step2_persistence.py DIR [--int] [--eps 0.5 0.75 1] [--fps F] [--um-per-px X]
-Entrada: DIR/h_xt_sub.npy (o DIR/h_xt.npy con --int) y DIR/meta.json, generados por step1.
-  fps y µm/px se toman de meta.json salvo que se pasen explícitamente.
-Salidas en DIR: persistence_<tag>eps*.npz, fig_Cn_tau_<tag>eps*.png, fig_xi_chi4_<tag>eps*.png
-  (tag = "sub_" para h subpíxel, "" para h entero) y resumen en stdout.
+Usage: python step2_persistence.py DIR [--int] [--eps 0.5 0.75 1] [--fps F] [--um-per-px X]
+Input: DIR/h_xt_sub.npy (or DIR/h_xt.npy with --int) and DIR/meta.json, written by step1.
+  fps and µm/px are taken from meta.json unless given explicitly.
+Outputs in DIR: persistence_<tag>eps*.npz, fig_Cn_tau_<tag>eps*.png, fig_xi_chi4_<tag>eps*.png
+  (tag = "sub_" for subpixel h, "" for integer h) and a summary on stdout.
 
-Definiciones (promedios sobre columnas i y tiempos de inicio t):
-  p_i(t,tau) = 1 si |h(x_i,t+tau) - h(x_i,t)| < eps
+Definitions (averages over columns i and start times t):
+  p_i(t,tau) = 1 if |h(x_i,t+tau) - h(x_i,t)| < eps
   Pi(t,tau)  = (1/L) sum_i p_i ;  Pi(tau) = <Pi(t,tau)>_t
   C(n,tau)   = <p_i p_{i+n}> - Pi(tau)^2
   chi4(tau)  = L [ <Pi(t,tau)^2>_t - Pi(tau)^2 ]
-Identidad exacta (bordes abiertos): chi4 = sum_{|n|<L} (1 - |n|/L) C(n).
-Como C(n) incluye la varianza de Pi entre distintos t, tiende a una meseta
-B = chi4_glob/L para n grande; se ajusta C(n) = A exp(-n/xi) + B.
+Exact identity (open boundaries): chi4 = sum_{|n|<L} (1 - |n|/L) C(n).
+Since C(n) includes the variance of Pi across start times t, it tends to a plateau
+B = chi4_glob/L at large n; the fit is C(n) = A exp(-n/xi) + B.
 """
 import argparse
 import json
@@ -28,16 +28,16 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import curve_fit
 
 ap = argparse.ArgumentParser()
-ap.add_argument("dir", help="carpeta de salida de step1 para una película")
-ap.add_argument("--int", action="store_true", help="usar h entero (h_xt.npy) en vez de subpíxel")
-ap.add_argument("--fps", type=float, default=None, help="default: el de meta.json")
+ap.add_argument("dir", help="step1 output folder of one movie")
+ap.add_argument("--int", action="store_true", help="use integer h (h_xt.npy) instead of subpixel")
+ap.add_argument("--fps", type=float, default=None, help="default: the value in meta.json")
 ap.add_argument("--um-per-px", type=float, default=None,
-                help="escala en µm/px (default: la de meta.json; 0 = reportar solo en px)")
+                help="scale in µm/px (default: the value in meta.json; 0 = report in px only)")
 ap.add_argument("--eps", type=float, nargs="+", default=None,
-                help="umbrales en px (default: 1, 2 y 3*sigma_Dh; con --int: 1 y 2)")
-ap.add_argument("--nmax", type=int, default=300, help="n máximo para C(n)")
+                help="thresholds in px (default: 1, 2 and 3*sigma_Dh; with --int: 1 and 2)")
+ap.add_argument("--nmax", type=int, default=300, help="maximum n for C(n)")
 ap.add_argument("--min-pers", type=int, default=200,
-                help="mínimo de eventos persistentes (sum p) para ajustar xi")
+                help="minimum number of persistent events (sum p) to fit xi")
 args = ap.parse_args()
 
 with open(os.path.join(args.dir, "meta.json")) as f:
@@ -47,31 +47,31 @@ if args.fps is None:
 if args.um_per_px is None:
     args.um_per_px = meta.get("um_per_px") or 0.0
 for w in meta.get("warnings", []):
-    print("ADVERTENCIA (step1):", w)
+    print("WARNING (step1):", w)
 tag0 = "" if args.int else "sub_"
 h = np.load(os.path.join(args.dir, "h_xt.npy" if args.int else "h_xt_sub.npy"))
 T, L = h.shape
 taus = np.arange(1, T // 2 + 1)
 
-# ruido de segmentación: rugosidad de alta frecuencia a lo largo de x
+# segmentation noise: high-frequency roughness along x
 sigma_noise = (h - gaussian_filter1d(h, 3, axis=1)).std()
-# ruido temporal: la pared avanza (h decrece) y no retrocede, así que los
-# Delta h(tau=1) > 0 son puro ruido de columnas quietas -> sigma de Delta h
+# temporal noise: the wall advances (h decreases) and does not retreat, so
+# Delta h(tau=1) > 0 is pure noise from still columns -> sigma of Delta h
 dh1 = h[1:] - h[:-1]
 back = dh1[dh1 > 0]
 sigma_dh = np.sqrt((back ** 2).mean()) if back.size else np.nan
 if back.size < 500:
-    print(f"ADVERTENCIA: solo {back.size} Delta h hacia atrás; sigma_Dh poco confiable "
-          f"(¿la pared nunca se queda quieta?). Pasá --eps a mano.")
+    print(f"WARNING: only {back.size} backward Delta h values; sigma_Dh is unreliable "
+          f"(does the wall never stay still?). Pass --eps explicitly.")
 if args.eps:
     eps_list = args.eps
-elif args.int:   # con h entero sigma_Dh no resuelve el ruido (< 1 px)
+elif args.int:   # with integer h, sigma_Dh cannot resolve the noise (< 1 px)
     eps_list = [1.0, 2.0]
 else:
     eps_list = [1.0, 2.0, round(3 * sigma_dh, 2)]
 eps_list = sorted(set(eps_list))
-print(f"L={L} columnas, T={T} frames, sigma_ruido(alta frec. en x)={sigma_noise:.2f} px, "
-      f"sigma_Dh(columnas quietas, retrocesos)={sigma_dh:.2f} px")
+print(f"L={L} columns, T={T} frames, sigma_noise(high freq. along x)={sigma_noise:.2f} px, "
+      f"sigma_Dh(still columns, backward steps)={sigma_dh:.2f} px")
 
 
 def expo(n, A, xi, B):
@@ -93,9 +93,9 @@ def analyse(eps):
         out["Pi"][k] = Pi
         out["npers"][k] = p.sum()
         out["chi4"][k] = L * Pit.var()
-        # C(n) para todos los n (vía FFT) -> identidad exacta con chi4
+        # C(n) for every n (via FFT) -> exact identity with chi4
         f = np.fft.rfft(p, n=2 * L, axis=1)
-        ac = np.fft.irfft(f * np.conj(f), axis=1)[:, :L].mean(0)   # sum_i p_i p_{i+n}, prom. en t
+        ac = np.fft.irfft(f * np.conj(f), axis=1)[:, :L].mean(0)   # sum_i p_i p_{i+n}, averaged over t
         Cfull = ac / (L - np.arange(L)) - Pi ** 2
         w = 1 - np.arange(L) / L
         out["chi4_sumC"][k] = Cfull[0] + 2 * np.sum(w[1:] * Cfull[1:])
@@ -113,7 +113,7 @@ def analyse(eps):
         A, xi, B = popt
         out["A"][k], out["xi"][k], out["B"][k] = A, xi, B
         out["xi_err"][k] = np.sqrt(pcov[1, 1])
-        # suma discreta del modelo: A coth(1/2xi) (parte exponencial) + B L (meseta)
+        # discrete sum of the model: A coth(1/2xi) (exponential part) + B L (plateau)
         out["chi4_model"][k] = A / np.tanh(1 / (2 * xi)) + B * L
     return out
 
@@ -137,7 +137,7 @@ for eps in eps_list:
     k_xi = int(np.nanargmax(r["xi"])) if valid.any() else None
     tau_star = r["tau"][k_chi]
 
-    # --- C(n,tau) para varios tau ---
+    # --- C(n,tau) for several tau ---
     fig, axes = plt.subplots(1, 2, figsize=(11, 4))
     ns = np.arange(r["C"].shape[1])
     ks = [k for k in np.where(valid)[0]][:8]
@@ -151,13 +151,13 @@ for eps in eps_list:
         axes[1].semilogy(ns, np.where(Cc > 0, Cc, np.nan), "o", ms=2, color=c)
         axes[1].semilogy(ns, np.exp(-ns / r["xi"][k]), "-", lw=1, color=c)
     axes[0].set_xlim(0, 80); axes[0].set_xlabel("n [px]"); axes[0].set_ylabel(r"$C(n,\tau)$")
-    axes[0].legend(fontsize=7); axes[0].set_title(rf"$\varepsilon$={eps:g} px  (puntos: datos; líneas: $Ae^{{-n/\xi}}+B$)", fontsize=9)
+    axes[0].legend(fontsize=7); axes[0].set_title(rf"$\varepsilon$={eps:g} px  (dots: data; lines: $Ae^{{-n/\xi}}+B$)", fontsize=9)
     axes[1].set_xlim(0, 80); axes[1].set_ylim(1e-3, 1.5)
     axes[1].set_xlabel("n [px]"); axes[1].set_ylabel(r"$(C-B)/A$")
-    axes[1].set_title("Escala semilog", fontsize=9)
+    axes[1].set_title("Semilog scale", fontsize=9)
     fig.tight_layout(); fig.savefig(os.path.join(args.dir, f"fig_Cn_tau_{tag}.png"), dpi=150); plt.close(fig)
 
-    # --- xi(tau) y chi4(tau), lin y log-log ---
+    # --- xi(tau) and chi4(tau), linear and log-log ---
     fig, axes = plt.subplots(2, 3, figsize=(14, 7.5))
     t = r["tau"]
     for row, logs in enumerate([False, True]):
@@ -168,7 +168,7 @@ for eps in eps_list:
         ax.plot(t, r["chi4"], "o-", ms=3, label=r"$L\,\mathrm{Var}_t(\Pi)$")
         ax.plot(t, r["chi4_sumC"], "x", ms=5, label=r"$\sum_n (1-|n|/L)\,C(n)$")
         ax.plot(t[valid], r["chi4_model"][valid], "s", mfc="none", ms=5,
-                label=r"modelo: $A\coth(1/2\xi)+BL$")
+                label=r"model: $A\coth(1/2\xi)+BL$")
         ax.axvline(tau_star, color="r", ls="--", lw=0.8)
         ax.set_ylabel(r"$\chi_4(\tau)$")
         ax = axes[row, 2]
@@ -179,7 +179,7 @@ for eps in eps_list:
             if logs:
                 ax.set_xscale("log"); ax.set_yscale("log")
         ax = axes[row, 0]
-        if logs:   # rango corto: etiquetas en notación simple, no 3x10^0
+        if logs:   # short range: plain tick labels instead of 3x10^0
             for a in (ax.xaxis, ax.yaxis):
                 a.set_major_formatter(FormatStrFormatter("%g"))
                 a.set_minor_formatter(FormatStrFormatter("%g"))
@@ -196,7 +196,7 @@ for eps in eps_list:
     fig.tight_layout(); fig.savefig(os.path.join(args.dir, f"fig_xi_chi4_{tag}.png"), dpi=150); plt.close(fig)
 
     print(f"\n=== eps = {eps:g} px ===")
-    print(" tau   Pi       chi4     sumC     modelo   xi[px]        A        B*L   n_pers")
+    print(" tau   Pi       chi4     sumC     model    xi[px]        A        B*L   n_pers")
     for k in range(len(t)):
         if r["npers"][k] == 0 and k > 0 and r["npers"][k - 1] == 0:
             continue
@@ -206,14 +206,14 @@ for eps in eps_list:
     s = (f"eps={eps:g} px: tau* (max chi4) = {tau_star} frames = {tau_star / args.fps * 1e3:.0f} ms, "
          f"chi4(tau*)={r['chi4'][k_chi]:.2f}, xi(tau*)={fmt_len(r['xi'][k_chi], r['xi_err'][k_chi])}")
     if k_xi is not None:
-        s += (f"; max xi en tau={t[k_xi]} frames ({t[k_xi] / args.fps * 1e3:.0f} ms): "
+        s += (f"; max xi at tau={t[k_xi]} frames ({t[k_xi] / args.fps * 1e3:.0f} ms): "
               f"xi={fmt_len(r['xi'][k_xi])}")
     summary.append(s)
 
-print("\n=== RESUMEN ===")
-print(f"sigma_ruido(x) = {sigma_noise:.2f} px; sigma_Dh = {sigma_dh:.2f} px; dt = {1e3 / args.fps:.0f} ms/frame")
+print("\n=== SUMMARY ===")
+print(f"sigma_noise(x) = {sigma_noise:.2f} px; sigma_Dh = {sigma_dh:.2f} px; dt = {1e3 / args.fps:.0f} ms/frame")
 v = -np.diff(h.mean(1)).mean()
-print(f"velocidad media de la pared = {v:.2f} px/frame"
+print(f"mean wall velocity = {v:.2f} px/frame"
       + (f" = {v * args.um_per_px * args.fps:.1f} µm/s" if args.um_per_px else ""))
 for s in summary:
     print(s)
