@@ -1,8 +1,10 @@
 """Paso 2: persistencia, correlación C(n,tau), longitud xi(tau) y chi4(tau).
 
-Uso:  python step2_persistence.py [--h h_xt_sub.npy --tag sub_] [--fps 25] [--um-per-px 0.17] [--eps 1 2]
-Entrada: h_xt.npy (del paso 1).
-Salidas: fig_Cn_tau_eps*.png, fig_xi_chi4_eps*.png, persistence_eps*.npz, resumen en stdout.
+Uso:  python step2_persistence.py DIR [--int] [--eps 0.5 0.75 1] [--fps F] [--um-per-px X]
+Entrada: DIR/h_xt_sub.npy (o DIR/h_xt.npy con --int) y DIR/meta.json, generados por step1.
+  fps y µm/px se toman de meta.json salvo que se pasen explícitamente.
+Salidas en DIR: persistence_<tag>eps*.npz, fig_Cn_tau_<tag>eps*.png, fig_xi_chi4_<tag>eps*.png
+  (tag = "sub_" para h subpíxel, "" para h entero) y resumen en stdout.
 
 Definiciones (promedios sobre columnas i y tiempos de inicio t):
   p_i(t,tau) = 1 si |h(x_i,t+tau) - h(x_i,t)| < eps
@@ -14,6 +16,8 @@ Como C(n) incluye la varianza de Pi entre distintos t, tiende a una meseta
 B = chi4_glob/L para n grande; se ajusta C(n) = A exp(-n/xi) + B.
 """
 import argparse
+import json
+import os
 
 import matplotlib
 matplotlib.use("Agg")
@@ -24,19 +28,28 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import curve_fit
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--h", default="h_xt.npy")
-ap.add_argument("--tag", default="", help="sufijo para los archivos de salida")
-ap.add_argument("--fps", type=float, default=25.0)
-ap.add_argument("--um-per-px", type=float, default=0.17,
-                help="escala espacial en µm/px (0 = reportar solo en px)")
+ap.add_argument("dir", help="carpeta de salida de step1 para una película")
+ap.add_argument("--int", action="store_true", help="usar h entero (h_xt.npy) en vez de subpíxel")
+ap.add_argument("--fps", type=float, default=None, help="default: el de meta.json")
+ap.add_argument("--um-per-px", type=float, default=None,
+                help="escala en µm/px (default: la de meta.json; 0 = reportar solo en px)")
 ap.add_argument("--eps", type=float, nargs="+", default=None,
-                help="umbrales en px (default: 1, 2 y 3*sigma_ruido)")
+                help="umbrales en px (default: 1, 2 y 3*sigma_Dh; con --int: 1 y 2)")
 ap.add_argument("--nmax", type=int, default=300, help="n máximo para C(n)")
 ap.add_argument("--min-pers", type=int, default=200,
                 help="mínimo de eventos persistentes (sum p) para ajustar xi")
 args = ap.parse_args()
 
-h = np.load(args.h)
+with open(os.path.join(args.dir, "meta.json")) as f:
+    meta = json.load(f)
+if args.fps is None:
+    args.fps = meta["fps"]
+if args.um_per_px is None:
+    args.um_per_px = meta.get("um_per_px") or 0.0
+for w in meta.get("warnings", []):
+    print("ADVERTENCIA (step1):", w)
+tag0 = "" if args.int else "sub_"
+h = np.load(os.path.join(args.dir, "h_xt.npy" if args.int else "h_xt_sub.npy"))
 T, L = h.shape
 taus = np.arange(1, T // 2 + 1)
 
@@ -45,8 +58,18 @@ sigma_noise = (h - gaussian_filter1d(h, 3, axis=1)).std()
 # ruido temporal: la pared avanza (h decrece) y no retrocede, así que los
 # Delta h(tau=1) > 0 son puro ruido de columnas quietas -> sigma de Delta h
 dh1 = h[1:] - h[:-1]
-sigma_dh = np.sqrt((dh1[dh1 > 0] ** 2).mean())
-eps_list = args.eps if args.eps else [1.0, 2.0, round(3 * sigma_dh, 2)]
+back = dh1[dh1 > 0]
+sigma_dh = np.sqrt((back ** 2).mean()) if back.size else np.nan
+if back.size < 500:
+    print(f"ADVERTENCIA: solo {back.size} Delta h hacia atrás; sigma_Dh poco confiable "
+          f"(¿la pared nunca se queda quieta?). Pasá --eps a mano.")
+if args.eps:
+    eps_list = args.eps
+elif args.int:   # con h entero sigma_Dh no resuelve el ruido (< 1 px)
+    eps_list = [1.0, 2.0]
+else:
+    eps_list = [1.0, 2.0, round(3 * sigma_dh, 2)]
+eps_list = sorted(set(eps_list))
 print(f"L={L} columnas, T={T} frames, sigma_ruido(alta frec. en x)={sigma_noise:.2f} px, "
       f"sigma_Dh(columnas quietas, retrocesos)={sigma_dh:.2f} px")
 
@@ -106,8 +129,9 @@ def fmt_len(px, err=None):
 summary = []
 for eps in eps_list:
     r = analyse(eps)
-    tag = f"{args.tag}eps{eps:g}"
-    np.savez(f"persistence_{tag}.npz", eps=eps, **r)
+    tag = f"{tag0}eps{eps:g}"
+    np.savez(os.path.join(args.dir, f"persistence_{tag}.npz"), eps=eps, sigma_dh=sigma_dh,
+             sigma_noise=sigma_noise, fps=args.fps, um_per_px=args.um_per_px, **r)
     valid = np.isfinite(r["xi"])
     k_chi = int(np.argmax(r["chi4"]))
     k_xi = int(np.nanargmax(r["xi"])) if valid.any() else None
@@ -131,7 +155,7 @@ for eps in eps_list:
     axes[1].set_xlim(0, 80); axes[1].set_ylim(1e-3, 1.5)
     axes[1].set_xlabel("n [px]"); axes[1].set_ylabel(r"$(C-B)/A$")
     axes[1].set_title("Escala semilog", fontsize=9)
-    fig.tight_layout(); fig.savefig(f"fig_Cn_tau_{tag}.png", dpi=150); plt.close(fig)
+    fig.tight_layout(); fig.savefig(os.path.join(args.dir, f"fig_Cn_tau_{tag}.png"), dpi=150); plt.close(fig)
 
     # --- xi(tau) y chi4(tau), lin y log-log ---
     fig, axes = plt.subplots(2, 3, figsize=(14, 7.5))
@@ -169,7 +193,7 @@ for eps in eps_list:
     axes[0, 1].legend(fontsize=7)
     axes[0, 0].set_title(rf"$\varepsilon$={eps:g} px", fontsize=10)
     axes[0, 1].set_title(rf"$\tau^*$={tau_star} frames", fontsize=10)
-    fig.tight_layout(); fig.savefig(f"fig_xi_chi4_{tag}.png", dpi=150); plt.close(fig)
+    fig.tight_layout(); fig.savefig(os.path.join(args.dir, f"fig_xi_chi4_{tag}.png"), dpi=150); plt.close(fig)
 
     print(f"\n=== eps = {eps:g} px ===")
     print(" tau   Pi       chi4     sumC     modelo   xi[px]        A        B*L   n_pers")

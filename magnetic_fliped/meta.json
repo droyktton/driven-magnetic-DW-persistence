@@ -1,0 +1,21 @@
+{
+  "video": "/home/ale/Documents/Codigos/DWsPMOKE/magnetic_fliped.mp4",
+  "fps": 25.0,
+  "um_per_px": 0.17,
+  "n_frames_video": 78,
+  "frame_first": 0,
+  "frame_last": 77,
+  "height": 370,
+  "width": 768,
+  "otsu_threshold": 0.458984375,
+  "roi": null,
+  "rotate": 0,
+  "flipud": false,
+  "fliplr": false,
+  "invert": false,
+  "sigma_y": 2.0,
+  "median_x": 5,
+  "edge_margin": 2,
+  "frac_retreat": 0.00018601190476190475,
+  "warnings": []
+}
