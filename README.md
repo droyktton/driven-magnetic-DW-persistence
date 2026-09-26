@@ -63,6 +63,7 @@ Reads `MOVIE/h_xt_sub.npy`, or `MOVIE/h_xt.npy` with `--int`. For each ε (`--ep
 - C(n,τ) = ⟨p_i p_{i+n}⟩ − Π², computed with an FFT for every n.
 - **ξ(τ)** comes from fitting C(n,τ) = A·e^(−n/ξ) + B. The constant B is needed because the global Π² is subtracted, so fluctuations of Π between different t leave a plateau at large n.
 - **χ4(τ)** = L·Var_t[Π(t,τ)].
+- **Normalized χ4**, χ4/[Π(1−Π)], in px. χ4 is roughly amplitude × correlation length, and the amplitude C(0) = Π(1−Π) falls quickly with τ as Π → 0. Dividing it out leaves an effective correlated length, which is ≈ 2ξ when the plateau term B·L is small. The script also reports the local part, (χ4 − B·L)/[Π(1−Π)], which removes the global frame-to-frame fluctuations of Π.
 - As a consistency check, it compares three quantities:
   - χ4, computed directly.
   - Σ_n (1−|n|/L)·C(n). This is an exact identity, so it always matches.
@@ -97,7 +98,7 @@ Reads every `MOVIE/persistence_sub_eps*.npz` file, or the integer-h files with `
 | `fig_qc_overlay.png` | Segmentation check: subpixel h(x,t) in red over 6 frames spread across the frames used. Use it to confirm that the curve follows the real wall contour. |
 | `fig_h_mean.png` | Left: mean wall position H − ⟨h⟩_x against frame, to check that the advance is monotonic with no jumps. Right: mean velocity −Δ⟨h⟩ in px/frame. Dropped frames, if any, are shaded in grey. |
 | `fig_Cn_tau_<tag>eps<ε>.png` | Left: C(n,τ) against distance n for the first τ values with a valid fit. Dots are data and lines are the fit A·e^(−n/ξ)+B. Right: (C−B)/A on a semilog scale, where an exponential decay appears as a straight line of slope −1/ξ. |
-| `fig_xi_chi4_<tag>eps<ε>.png` | Top row linear, bottom row log-log. Columns: (1) ξ(τ) with fit error bars, in px on the left axis and µm on the right; (2) χ4(τ) computed directly, from the C(n) sum and from the model sum, with τ\* marked in red; (3) Π(τ). |
+| `fig_xi_chi4_<tag>eps<ε>.png` | Top row linear, bottom row log-log. Columns: (1) ξ(τ) with fit error bars, in px on the left axis and µm on the right; (2) χ4(τ) computed directly, from the C(n) sum and from the model sum, with τ\* marked in red; (3) Π(τ); (4) normalized χ4/[Π(1−Π)] (dots), its local part (χ4 − B·L)/[Π(1−Π)] (squares) and 2ξ (dashed) for comparison. |
 | `fig_eps_sweep_sub.png` | (1) ξ(τ) for each ε, with a µm axis on the right; (2) χ4(τ) for each ε on a semilog scale; (3) ξ(τ=1) in µm (blue) and χ4(τ=1) (red) against ε. The grey band extends to ε = 3σ_Δh. |
 
 ## Results for `magnetic_fliped`
@@ -107,3 +108,4 @@ Reads every `MOVIE/persistence_sub_eps*.npz` file, or the integer-h files with `
 - **ξ(τ\*)** at ε = 0.75 px: **17.7 ± 0.2 px = 3.01 ± 0.04 µm** (statistical error). The systematic error is ~±3 px (~±0.5 µm), because ξ(1) grows from 14 to 22 px (2.4 to 3.8 µm) as ε goes from 0.25 to 3 px.
 - **Mean wall velocity:** 3.95 px/frame = 16.8 µm/s.
 - **Shape of ξ(τ):** a plateau from τ = 1 to 2–3 frames, followed by a decay to ~5 px at τ ≈ 7–8.
+- **Normalized χ4** (ε = 0.75 px): χ4/[Π(1−Π)] ≈ 45–48 px for τ = 1–3, then decays. It has the same shape as ξ(τ). So the monotonic decay of the raw χ4 comes mostly from Π → 0, not from a loss of cooperativity at short τ. The plateau term B·L accounts for about a third of χ4 at τ = 1.

@@ -115,6 +115,12 @@ def analyse(eps):
         out["xi_err"][k] = np.sqrt(pcov[1, 1])
         # discrete sum of the model: A coth(1/2xi) (exponential part) + B L (plateau)
         out["chi4_model"][k] = A / np.tanh(1 / (2 * xi)) + B * L
+    # chi4 normalized by the single-site variance Pi(1-Pi): an effective correlated
+    # length in px (~ 2 xi when the plateau B L is negligible)
+    var1 = out["Pi"] * (1 - out["Pi"])
+    with np.errstate(invalid="ignore", divide="ignore"):
+        out["chi4_norm"] = np.where(var1 > 0, out["chi4"] / var1, np.nan)
+        out["chi4_norm_local"] = np.where(var1 > 0, (out["chi4"] - out["B"] * L) / var1, np.nan)
     return out
 
 
@@ -158,7 +164,7 @@ for eps in eps_list:
     fig.tight_layout(); fig.savefig(os.path.join(args.dir, f"fig_Cn_tau_{tag}.png"), dpi=150); plt.close(fig)
 
     # --- xi(tau) and chi4(tau), linear and log-log ---
-    fig, axes = plt.subplots(2, 3, figsize=(14, 7.5))
+    fig, axes = plt.subplots(2, 4, figsize=(18.5, 7.5))
     t = r["tau"]
     for row, logs in enumerate([False, True]):
         ax = axes[row, 0]
@@ -174,15 +180,23 @@ for eps in eps_list:
         ax = axes[row, 2]
         ax.plot(t, r["Pi"], "o-", ms=3)
         ax.set_ylabel(r"$\Pi(\tau)$")
+        ax = axes[row, 3]
+        ax.plot(t, r["chi4_norm"], "o-", ms=3, label=r"$\chi_4/[\Pi(1-\Pi)]$")
+        ax.plot(t[valid], r["chi4_norm_local"][valid], "s", mfc="none", ms=5,
+                label=r"$(\chi_4 - BL)/[\Pi(1-\Pi)]$")
+        ax.plot(t[valid], 2 * r["xi"][valid], "--", color="0.4", lw=1, label=r"$2\xi$")
+        ax.set_ylabel(r"$\chi_4/[\Pi(1-\Pi)]$ [px]")
         for ax in axes[row]:
             ax.set_xlabel(r"$\tau$ [frames]")
             if logs:
                 ax.set_xscale("log"); ax.set_yscale("log")
+        for ax in (axes[row, 0], axes[row, 3]):
+            if logs:   # short range: plain tick labels instead of 3x10^0
+                for a in (ax.xaxis, ax.yaxis):
+                    a.set_major_formatter(FormatStrFormatter("%g"))
+                    a.set_minor_formatter(FormatStrFormatter("%g"))
+                ax.set_xlim(left=0.95)   # tau >= 1; avoids a 0.9 tick next to 1
         ax = axes[row, 0]
-        if logs:   # short range: plain tick labels instead of 3x10^0
-            for a in (ax.xaxis, ax.yaxis):
-                a.set_major_formatter(FormatStrFormatter("%g"))
-                a.set_minor_formatter(FormatStrFormatter("%g"))
         if args.um_per_px:
             k = args.um_per_px
             sec = ax.secondary_yaxis("right", functions=(lambda y: y * k, lambda y: y / k))
@@ -191,18 +205,20 @@ for eps in eps_list:
                 sec.yaxis.set_major_formatter(FormatStrFormatter("%g"))
                 sec.yaxis.set_minor_formatter(FormatStrFormatter("%g"))
     axes[0, 1].legend(fontsize=7)
+    axes[0, 3].legend(fontsize=7)
+    axes[0, 3].set_title("Normalized $\\chi_4$", fontsize=10)
     axes[0, 0].set_title(rf"$\varepsilon$={eps:g} px", fontsize=10)
     axes[0, 1].set_title(rf"$\tau^*$={tau_star} frames", fontsize=10)
     fig.tight_layout(); fig.savefig(os.path.join(args.dir, f"fig_xi_chi4_{tag}.png"), dpi=150); plt.close(fig)
 
     print(f"\n=== eps = {eps:g} px ===")
-    print(" tau   Pi       chi4     sumC     model    xi[px]        A        B*L   n_pers")
+    print(" tau   Pi       chi4     sumC     model    xi[px]        A        B*L   chi4/[Pi(1-Pi)]  n_pers")
     for k in range(len(t)):
         if r["npers"][k] == 0 and k > 0 and r["npers"][k - 1] == 0:
             continue
         print(f"{t[k]:4d} {r['Pi'][k]:8.4f} {r['chi4'][k]:8.3f} {r['chi4_sumC'][k]:8.3f} "
               f"{r['chi4_model'][k]:8.3f} {r['xi'][k]:6.2f}±{r['xi_err'][k]:<5.2f} "
-              f"{r['A'][k]:8.4f} {r['B'][k] * L:8.3f} {int(r['npers'][k]):6d}")
+              f"{r['A'][k]:8.4f} {r['B'][k] * L:8.3f} {r['chi4_norm'][k]:12.2f}     {int(r['npers'][k]):6d}")
     s = (f"eps={eps:g} px: tau* (max chi4) = {tau_star} frames = {tau_star / args.fps * 1e3:.0f} ms, "
          f"chi4(tau*)={r['chi4'][k_chi]:.2f}, xi(tau*)={fmt_len(r['xi'][k_chi], r['xi_err'][k_chi])}")
     if k_xi is not None:
