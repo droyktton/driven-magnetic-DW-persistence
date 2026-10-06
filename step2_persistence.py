@@ -252,6 +252,6 @@ print("\n=== SUMMARY ===")
 print(f"sigma_noise(x) = {sigma_noise:.2f} px; sigma_Dh = {sigma_dh:.2f} px; dt = {fmt_time(1)}/frame")
 v = -np.diff(h.mean(1)).mean()
 print(f"mean wall velocity = {v:.2f} px/frame"
-      + (f" = {v * args.um_per_px * args.fps:.1f} µm/s" if args.um_per_px else ""))
+      + (f" = {v * args.um_per_px * args.fps:.3g} µm/s" if args.um_per_px else ""))
 for s in summary:
     print(s)

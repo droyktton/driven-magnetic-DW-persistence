@@ -13,7 +13,7 @@ Each data set is a separate study with its own folder and report:
 | Study | Data | Report |
 |---|---|---|
 | 1 | `magnetic_fliped/`: video, 78 frames at 25 fps (Δt = 40 ms), 0.17 µm/px, wall moving upward | [`magnetic_fliped/REPORT.md`](magnetic_fliped/REPORT.md) |
-| 2 | `0_8A_15s_20x_RT_1/`: 1800 Micro-Manager TIFF frames, Δt = 20 s (10 h), 20x, wall moving to the right | [`0_8A_15s_20x_RT_1/REPORT.md`](0_8A_15s_20x_RT_1/REPORT.md) |
+| 2 | `0_8A_15s_20x_RT_1/`: 1800 Micro-Manager TIFF frames, Δt = 20 s (10 h), 20x, 0.1175 µm/px, wall moving to the right | [`0_8A_15s_20x_RT_1/REPORT.md`](0_8A_15s_20x_RT_1/REPORT.md) |
 
 Requires numpy, scipy, matplotlib and scikit-image; for videos also imageio-ffmpeg (or an `ffmpeg` binary on the PATH); for TIFF folders also tifffile and Pillow, and ffmpeg for the QC movie.
 

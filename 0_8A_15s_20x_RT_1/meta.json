@@ -1,6 +1,6 @@
 {
   "fps": 0.05,
-  "um_per_px": null,
+  "um_per_px": 0.1175,
   "n_frames_video": 1800,
   "frame_first": 0,
   "frame_last": 1799,
