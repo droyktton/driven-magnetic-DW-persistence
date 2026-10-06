@@ -1,9 +1,9 @@
 """Sensitivity to epsilon: xi(tau) and chi4(tau) for several eps.
 
 Usage: python step2_persistence.py DIR --eps 0.25 0.5 0.75 1 1.5 2 3
-      python step3_eps_sweep.py DIR [--int] [--sigma-dh S] [--um-per-px X]
+      python step3_eps_sweep.py DIR [--int] [--row-mean] [--sigma-dh S] [--um-per-px X]
 sigma_Dh and µm/px are read from the step2 .npz files unless given explicitly.
-Output: DIR/fig_eps_sweep_sub.png (or _int.png with --int)
+Output: DIR/fig_eps_sweep_sub.png (_int.png with --int; _sub_rm.png / _rm.png with --row-mean)
 """
 import argparse
 import glob
@@ -18,11 +18,12 @@ import numpy as np
 ap = argparse.ArgumentParser()
 ap.add_argument("dir", help="folder of one movie (output of step1/step2)")
 ap.add_argument("--int", action="store_true", help="use the integer-h results")
+ap.add_argument("--row-mean", action="store_true", help="use the step2 --row-mean results")
 ap.add_argument("--sigma-dh", type=float, default=None, help="noise of Delta h (px)")
 ap.add_argument("--um-per-px", type=float, default=None,
                 help="spatial scale in µm/px (0 = px only)")
 args = ap.parse_args()
-tag = "" if args.int else "sub_"
+tag = ("" if args.int else "sub_") + ("rm_" if args.row_mean else "")
 
 files = sorted(glob.glob(os.path.join(args.dir, f"persistence_{tag}eps*.npz")),
                key=lambda f: float(re.search(r"eps([\d.]+)\.npz", f).group(1)))
@@ -66,7 +67,7 @@ if args.um_per_px:
     axes[0].secondary_yaxis("right", functions=(lambda y: y * k, lambda y: y / k)
                             ).set_ylabel(r"$\xi$ [µm]")
 fig.tight_layout()
-fig.savefig(os.path.join(args.dir, "fig_eps_sweep_int.png" if args.int else "fig_eps_sweep_sub.png"),
+fig.savefig(os.path.join(args.dir, f"fig_eps_sweep_{tag or 'int_'}".rstrip("_") + ".png"),
             dpi=150)
 for e, x, xe, ch in zip(eps, xi1, xe1, chi1):
     um = f" = {x * args.um_per_px:.2f}±{xe * args.um_per_px:.2f} µm" if args.um_per_px else ""

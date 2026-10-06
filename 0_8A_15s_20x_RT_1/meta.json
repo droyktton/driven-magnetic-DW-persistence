@@ -1,0 +1,36 @@
+{
+  "fps": 0.05,
+  "um_per_px": null,
+  "n_frames_video": 1800,
+  "frame_first": 0,
+  "frame_last": 1799,
+  "height": 1197,
+  "width": 1006,
+  "source": "tiff",
+  "tiff_dir": "/media/koltona/MOBILEDATAMOKE/ResumenMaestría_Mati/0_8A_15s_20x_RT_1/Pos0",
+  "crop_right": 1197,
+  "rows_used": [
+    12,
+    1018
+  ],
+  "drift_max_px": [
+    9.300000190734863,
+    4.400000095367432
+  ],
+  "contrast_threshold": 0.026573222130537033,
+  "n_defect_px": 8841,
+  "frac_rows_front_ne_area": 0.08403633753037332,
+  "tilt_deg_first_last": [
+    -12.793002667924961,
+    -9.776732300795468
+  ],
+  "overhang_rows_mean": 52.925,
+  "nref": 5,
+  "geometry": "dark domain on the left, wall moving to +x; h = W-1-x_eff (switched area per row), columns of h = image rows y0..y1-1 (registered to frame 0)",
+  "median_x": 5,
+  "edge_margin": 2,
+  "frac_retreat": 0.0,
+  "warnings": [
+    "the mean <h> moves backward in 3 steps"
+  ]
+}

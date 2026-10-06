@@ -1,10 +1,11 @@
 """Step 2: persistence, correlation C(n,tau), correlation length xi(tau) and chi4(tau).
 
-Usage: python step2_persistence.py DIR [--int] [--eps 0.5 0.75 1] [--fps F] [--um-per-px X]
+Usage: python step2_persistence.py DIR [--int] [--row-mean] [--eps 0.5 0.75 1] [--fps F] [--um-per-px X]
 Input: DIR/h_xt_sub.npy (or DIR/h_xt.npy with --int) and DIR/meta.json, written by step1.
   fps and µm/px are taken from meta.json unless given explicitly.
 Outputs in DIR: persistence_<tag>eps*.npz, fig_Cn_tau_<tag>eps*.png, fig_xi_chi4_<tag>eps*.png
-  (tag = "sub_" for subpixel h, "" for integer h) and a summary on stdout.
+  (tag = "sub_" for subpixel h, "" for integer h, followed by "rm_" with --row-mean) and a
+  summary on stdout.
 
 Definitions (averages over columns i and start times t):
   p_i(t,tau) = 1 if |h(x_i,t+tau) - h(x_i,t)| < eps
@@ -14,6 +15,12 @@ Definitions (averages over columns i and start times t):
 Exact identity (open boundaries): chi4 = sum_{|n|<L} (1 - |n|/L) C(n).
 Since C(n) includes the variance of Pi across start times t, it tends to a plateau
 B = chi4_glob/L at large n; the fit is C(n) = A exp(-n/xi) + B.
+
+--row-mean: C(n,tau) = < (p_i - m_i)(p_{i+n} - m_{i+n}) >, with m_i = <p_i(t,tau)>_t the mean
+persistence of column i. This removes the static part <m_i m_{i+n}> - Pi^2, which comes from
+columns that advance at different average rates (e.g. strongly pinned rows) and always sums to
+zero over all pairs, so it is positive at short n and negative at large n. The identity with
+chi4 still holds exactly, because chi4 = (1/L) sum_ij cov_t(p_i, p_j).
 """
 import argparse
 import json
@@ -35,6 +42,8 @@ ap.add_argument("--um-per-px", type=float, default=None,
                 help="scale in µm/px (default: the value in meta.json; 0 = report in px only)")
 ap.add_argument("--eps", type=float, nargs="+", default=None,
                 help="thresholds in px (default: 1, 2 and 3*sigma_Dh; with --int: 1 and 2)")
+ap.add_argument("--row-mean", action="store_true",
+                help="subtract the mean persistence of each column before computing C(n)")
 ap.add_argument("--nmax", type=int, default=300, help="maximum n for C(n)")
 ap.add_argument("--min-pers", type=int, default=200,
                 help="minimum number of persistent events (sum p) to fit xi")
@@ -48,7 +57,7 @@ if args.um_per_px is None:
     args.um_per_px = meta.get("um_per_px") or 0.0
 for w in meta.get("warnings", []):
     print("WARNING (step1):", w)
-tag0 = "" if args.int else "sub_"
+tag0 = ("" if args.int else "sub_") + ("rm_" if args.row_mean else "")
 h = np.load(os.path.join(args.dir, "h_xt.npy" if args.int else "h_xt_sub.npy"))
 T, L = h.shape
 taus = np.arange(1, T // 2 + 1)
@@ -94,9 +103,10 @@ def analyse(eps):
         out["npers"][k] = p.sum()
         out["chi4"][k] = L * Pit.var()
         # C(n) for every n (via FFT) -> exact identity with chi4
-        f = np.fft.rfft(p, n=2 * L, axis=1)
-        ac = np.fft.irfft(f * np.conj(f), axis=1)[:, :L].mean(0)   # sum_i p_i p_{i+n}, averaged over t
-        Cfull = ac / (L - np.arange(L)) - Pi ** 2
+        q = p - p.mean(0) if args.row_mean else p
+        f = np.fft.rfft(q, n=2 * L, axis=1)
+        ac = np.fft.irfft(f * np.conj(f), axis=1)[:, :L].mean(0)   # sum_i q_i q_{i+n}, averaged over t
+        Cfull = ac / (L - np.arange(L)) - (0 if args.row_mean else Pi ** 2)
         w = 1 - np.arange(L) / L
         out["chi4_sumC"][k] = Cfull[0] + 2 * np.sum(w[1:] * Cfull[1:])
         out["C"][k] = Cfull[: nmax + 1]
@@ -132,6 +142,17 @@ def fmt_len(px, err=None):
     return s
 
 
+def fmt_time(frames):
+    sec = frames / args.fps
+    if sec < 1:
+        return f"{sec * 1e3:.0f} ms"
+    if sec < 120:
+        return f"{sec:.3g} s"
+    if sec < 7200:
+        return f"{sec / 60:.3g} min"
+    return f"{sec / 3600:.3g} h"
+
+
 summary = []
 for eps in eps_list:
     r = analyse(eps)
@@ -156,9 +177,10 @@ for eps in eps_list:
         Cc = (C - r["B"][k]) / r["A"][k]
         axes[1].semilogy(ns, np.where(Cc > 0, Cc, np.nan), "o", ms=2, color=c)
         axes[1].semilogy(ns, np.exp(-ns / r["xi"][k]), "-", lw=1, color=c)
-    axes[0].set_xlim(0, 80); axes[0].set_xlabel("n [px]"); axes[0].set_ylabel(r"$C(n,\tau)$")
+    nlim = min(ns[-1], max(80, 5 * np.nanmax(r["xi"][ks]))) if ks else 80
+    axes[0].set_xlim(0, nlim); axes[0].set_xlabel("n [px]"); axes[0].set_ylabel(r"$C(n,\tau)$")
     axes[0].legend(fontsize=7); axes[0].set_title(rf"$\varepsilon$={eps:g} px  (dots: data; lines: $Ae^{{-n/\xi}}+B$)", fontsize=9)
-    axes[1].set_xlim(0, 80); axes[1].set_ylim(1e-3, 1.5)
+    axes[1].set_xlim(0, nlim); axes[1].set_ylim(1e-3, 1.5)
     axes[1].set_xlabel("n [px]"); axes[1].set_ylabel(r"$(C-B)/A$")
     axes[1].set_title("Semilog scale", fontsize=9)
     fig.tight_layout(); fig.savefig(os.path.join(args.dir, f"fig_Cn_tau_{tag}.png"), dpi=150); plt.close(fig)
@@ -219,15 +241,15 @@ for eps in eps_list:
         print(f"{t[k]:4d} {r['Pi'][k]:8.4f} {r['chi4'][k]:8.3f} {r['chi4_sumC'][k]:8.3f} "
               f"{r['chi4_model'][k]:8.3f} {r['xi'][k]:6.2f}±{r['xi_err'][k]:<5.2f} "
               f"{r['A'][k]:8.4f} {r['B'][k] * L:8.3f} {r['chi4_norm'][k]:12.2f}     {int(r['npers'][k]):6d}")
-    s = (f"eps={eps:g} px: tau* (max chi4) = {tau_star} frames = {tau_star / args.fps * 1e3:.0f} ms, "
+    s = (f"eps={eps:g} px: tau* (max chi4) = {tau_star} frames = {fmt_time(tau_star)}, "
          f"chi4(tau*)={r['chi4'][k_chi]:.2f}, xi(tau*)={fmt_len(r['xi'][k_chi], r['xi_err'][k_chi])}")
     if k_xi is not None:
-        s += (f"; max xi at tau={t[k_xi]} frames ({t[k_xi] / args.fps * 1e3:.0f} ms): "
+        s += (f"; max xi at tau={t[k_xi]} frames ({fmt_time(t[k_xi])}): "
               f"xi={fmt_len(r['xi'][k_xi])}")
     summary.append(s)
 
 print("\n=== SUMMARY ===")
-print(f"sigma_noise(x) = {sigma_noise:.2f} px; sigma_Dh = {sigma_dh:.2f} px; dt = {1e3 / args.fps:.0f} ms/frame")
+print(f"sigma_noise(x) = {sigma_noise:.2f} px; sigma_Dh = {sigma_dh:.2f} px; dt = {fmt_time(1)}/frame")
 v = -np.diff(h.mean(1)).mean()
 print(f"mean wall velocity = {v:.2f} px/frame"
       + (f" = {v * args.um_per_px * args.fps:.1f} µm/s" if args.um_per_px else ""))

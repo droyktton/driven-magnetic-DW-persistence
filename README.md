@@ -1,33 +1,41 @@
 # Driven magnetic domain wall: persistence and dynamic correlation length
 
-Analysis pipeline for movies of a driven magnetic domain wall, for example from polar MOKE microscopy. The pipeline:
+Analysis pipeline for movies or TIFF frame sequences of a driven magnetic domain wall, for example from polar MOKE microscopy. The pipeline:
 
 1. Extracts the wall position h(x,t).
 2. Computes the persistence field between times t and t+τ.
 3. Measures the dynamic correlation length ξ(τ) and the four-point susceptibility χ4(τ).
 
-The included example is `magnetic_fliped/`: 78 frames of 768×370 px at 25 fps (Δt = 40 ms). The scale is δ ≈ 0.17 µm/px, so the field of view is ≈ 131 × 63 µm. The bright domain is on top, the dark domain at the bottom, and the wall moves upward.
+## Studies
 
-Requires numpy, scipy, matplotlib, scikit-image and imageio-ffmpeg. imageio-ffmpeg ships its own ffmpeg binary.
+Each data set is a separate study with its own folder and report:
+
+| Study | Data | Report |
+|---|---|---|
+| 1 | `magnetic_fliped/`: video, 78 frames at 25 fps (Δt = 40 ms), 0.17 µm/px, wall moving upward | [`magnetic_fliped/REPORT.md`](magnetic_fliped/REPORT.md) |
+| 2 | `0_8A_15s_20x_RT_1/`: 1800 Micro-Manager TIFF frames, Δt = 20 s (10 h), 20x, wall moving to the right | [`0_8A_15s_20x_RT_1/REPORT.md`](0_8A_15s_20x_RT_1/REPORT.md) |
+
+Requires numpy, scipy, matplotlib and scikit-image; for videos also imageio-ffmpeg (or an `ffmpeg` binary on the PATH); for TIFF folders also tifffile and Pillow, and ffmpeg for the QC movie.
 
 ## Usage
 
-Each movie gets its own output folder. By default the folder is named after the video file without its extension.
+Each movie gets its own output folder. By default the folder is named after the video file without its extension. For a TIFF folder it is named after the folder, or after its parent when the folder is a Micro-Manager `PosN`.
 
 ```bash
 python step1_extract_wall.py MOVIE.mp4 --um-per-px 0.17        # -> MOVIE/ with h(x,t) and meta.json
+python step1_extract_wall.py /path/RUN/Pos0 --um-per-px 0      # TIFF frames -> RUN/
 python step2_persistence.py MOVIE --eps 0.25 0.5 0.75 1 1.5 2 3  # subpixel h
 python step2_persistence.py MOVIE --int                          # integer h, ε = 1, 2
 python step3_eps_sweep.py MOVIE                                  # sensitivity to ε
 ```
 
-Step 1 writes the frame rate and the spatial scale to `MOVIE/meta.json`, and steps 2 and 3 read them from there. By default, the frame rate is the one stored in the video and the scale is 0.17 µm/px. You can override either with `--fps` or `--um-per-px` in any step. `--um-per-px 0` reports everything in pixels only.
+Step 1 writes the frame rate and the spatial scale to `MOVIE/meta.json`, and steps 2 and 3 read them from there. By default, the frame rate is the one stored in the video (for TIFF: from the timestamps in Micro-Manager's `metadata.txt`) and the scale is 0.17 µm/px. You can override either with `--fps` or `--um-per-px` in any step. `--um-per-px 0` reports everything in pixels only.
 
 The original video of the example is not in the repository. Without it you can start from step 2, because `magnetic_fliped/h_xt*.npy` and `meta.json` are included. To rerun step 1, copy `magnetic_fliped.mp4` into the repository root.
 
 ## Input requirements
 
-The method assumes the following about the movie. Step 1 checks the ones marked ✔ and prints warnings, which are also stored in `meta.json` and repeated by step 2.
+The method assumes the following about the movie. Items 1, 2 and 4 refer to the video detection; the TIFF detection has its own assumptions, listed in its section below. Step 1 checks the ones marked ✔ and prints warnings, which are also stored in `meta.json` and repeated by step 2.
 
 1. **Orientation.** The bright domain is on top, the dark domain at the bottom, and the wall moves upward, so h decreases with t. For other geometries, use `--rotate K` (K × 90° counter-clockwise), `--flipud`, `--fliplr` or `--invert` (swap bright and dark). ✔ Step 1 warns if the mean wall position does not move upward.
 2. **A single wall that spans the full width and is single-valued in x.** There must be no overhangs and no nucleated bubbles or dark spots in the bright domain ahead of the wall. h is defined as the first dark row from the top, so any dark feature above the wall is taken as the wall. Use `--roi X0 X1 Y0 Y1` to crop out edges, scale bars or overlaid text.
@@ -54,6 +62,20 @@ Outputs in `MOVIE/`:
 - `meta.json`: fps, µm/px, frames used, threshold, transformations and warnings.
 - `fig_qc_overlay.png` and `fig_h_mean.png`.
 
+#### TIFF folder input
+
+When the argument is a folder, step 1 reads its `*.tif` frames in numeric order and uses a different detection, built for long, slow acquisitions with weak contrast, uneven illumination, static defects and sample drift. It assumes a **dark domain on the left growing to the right**; the wall may be tilted and rough.
+
+1. **Drift.** Each frame is registered to frame 0 by phase correlation of the high-passed image (defects give the texture). The drift curve is smoothed in time and applied with subpixel shifts. Rows that the vertical drift leaves without data are trimmed, plus `--trim-y` px (default 12) at each end.
+2. **Right crop.** Columns from where the illumination of the field of view falls below 90 % of its plateau (minus 20 px) are discarded, in camera coordinates and the same for every frame. `--crop-right N` sets the column by hand.
+3. **Per-pixel references.** Every frame is divided by the median of the pixels that never switch (global brightness drift). The bright reference B is the mean of the first `--nref` frames and the dark reference D the mean of the last ones. The swept area is where (B − D)/B exceeds its Otsu threshold. The normalised intensity s = (I − D)/(B − D) is 1 before and 0 after the wall passes, which cancels vignetting and static defects.
+4. **Arrival-time map.** For each pixel, the number of frames with s > 0.5 is the frame at which it switches (this assumes a monotonic advance). Defects inside the swept area show no contrast; they get the arrival time of the nearest valid pixel.
+5. **Wall.** The domain at frame t is the set of pixels with arrival ≤ t connected to the left edge, with holes filled, so isolated spots ahead of the wall are ignored. The wall position x(y,t) is the right-most domain pixel of each row y. Where the wall folds back (overhangs), this is its front. The subpixel position comes from the 0.5 crossing of s. Then h = W − 1 − x, so that h decreases with t as in the video convention, and the columns of h are the image rows y.
+
+h is measured along x in each row y. For a wall tilted by θ from vertical, a step Δx corresponds to a normal displacement Δx·cos θ, and a distance n along y to n/cos θ along the wall. The tilt θ(t) is fitted in every frame and reported.
+
+Extra outputs: `tiff_extra.npz` (drift, arrival map, swept area, defects, x(y,t), tilt, overhang rows per frame), `fig_drift_arrival.png`, `fig_kymograph.png`, `fig_tilt_overhang.png`, and in `qc/` an overlay movie of every frame (`overlay.mp4`) plus `overlay_NNNN.png` every `--qc-every` frames.
+
 ### `step2_persistence.py`: persistence, C(n,τ), ξ(τ), χ4(τ)
 
 Reads `MOVIE/h_xt_sub.npy`, or `MOVIE/h_xt.npy` with `--int`. For each ε (`--eps`) and each τ = 1…n_frames/2 it computes the quantities below. All averages run over columns i and over all start times t.
@@ -71,6 +93,8 @@ Reads `MOVIE/h_xt_sub.npy`, or `MOVIE/h_xt.npy` with `--int`. For each ε (`--ep
 - τ\* is the τ at which χ4 is maximal.
 
 ξ is fitted only when there are at least 200 persistent events (`--min-pers`); otherwise it is left as NaN.
+
+**`--row-mean`.** Computes C(n,τ) = ⟨(p_i − m_i)(p_{i+n} − m_{i+n})⟩, with m_i = ⟨p_i⟩_t the mean persistence of column i. This removes the static term ⟨m_i m_{i+n}⟩ − Π², which appears when columns advance at different average rates (for example columns pinned by defects for a long time). That term sums to zero over all pairs, so it is positive at short n and negative at large n, and it biases the fit of ξ. The identity χ4 = Σ_n (1−|n|/L)·C(n) still holds exactly. The output files get the tag `rm_` (e.g. `persistence_sub_rm_eps1.npz`), and `step3_eps_sweep.py --row-mean` reads them. Recommended for long acquisitions; see Study 2.
 
 **Noise estimate.** The script reports two estimates:
 - σ_noise(x): high-frequency roughness along x.
@@ -100,34 +124,3 @@ Reads every `MOVIE/persistence_sub_eps*.npz` file, or the integer-h files with `
 | `fig_Cn_tau_<tag>eps<ε>.png` | Left: C(n,τ) against distance n for the first τ values with a valid fit. Dots are data and lines are the fit A·e^(−n/ξ)+B. Right: (C−B)/A on a semilog scale, where an exponential decay appears as a straight line of slope −1/ξ. |
 | `fig_xi_chi4_<tag>eps<ε>.png` | Top row linear, bottom row log-log. Columns: (1) ξ(τ) with fit error bars, in px on the left axis and µm on the right; (2) χ4(τ) computed directly, from the C(n) sum and from the model sum, with τ\* marked in red; (3) Π(τ); (4) normalized χ4/[Π(1−Π)] (dots), its local part (χ4 − B·L)/[Π(1−Π)] (squares) and 2ξ (dashed) for comparison. |
 | `fig_eps_sweep_sub.png` | (1) ξ(τ) for each ε, with a µm axis on the right; (2) χ4(τ) for each ε on a semilog scale; (3) ξ(τ=1) in µm (blue) and χ4(τ=1) (red) against ε. The grey band extends to ε = 3σ_Δh. |
-
-## Results for `magnetic_fliped`
-
-- **Noise:** σ_Δh = 0.25 px, so ε = 3σ_Δh = 0.75 px was chosen (subpixel h). Only 0.02 % of the one-frame displacements are retreats larger than 1 px.
-- **τ\*:** χ4(τ) decreases monotonically from τ = 1 for every ε, so **τ\* ≤ 1 frame = 40 ms** and is not resolved at this frame rate. The wall advances ~4 px/frame, so Π(τ) is almost zero by τ ≈ 10.
-- **ξ(τ\*)** at ε = 0.75 px: **17.7 ± 0.2 px = 3.01 ± 0.04 µm** (statistical error). The systematic error is ~±3 px (~±0.5 µm), because ξ(1) grows from 14 to 22 px (2.4 to 3.8 µm) as ε goes from 0.25 to 3 px.
-- **Mean wall velocity:** 3.95 px/frame = 16.8 µm/s.
-- **Shape of ξ(τ):** a plateau from τ = 1 to 2–3 frames, followed by a decay to ~5 px at τ ≈ 7–8.
-- **Normalized χ4** (ε = 0.75 px): χ4/[Π(1−Π)] ≈ 45–48 px for τ = 1–3, then decays. It has the same shape as ξ(τ). So the monotonic decay of the raw χ4 comes mostly from Π → 0, not from a loss of cooperativity at short τ. The plateau term B·L accounts for about a third of χ4 at τ = 1.
-
-## Discussion and outlook
-
-### Measuring τ\* needs better time resolution
-χ4(τ) is largest at the first measured point, τ = 40 ms, so its peak lies at or below one frame. Seeing χ4 rise, peak and fall requires the first lag to leave most columns persistent, roughly Π(Δt) ≈ 0.8–0.9. Here Π(40 ms) = 0.26, so 74 % of the columns have already moved within a single frame.
-
-As an order-of-magnitude estimate, assume Π(τ) ≈ exp(−τ/τ_p). Then Π(40 ms) = 0.26 gives τ_p ≈ 30 ms, and Π(Δt) ≈ 0.8–0.9 requires Δt ≈ 3–7 ms, that is **~150–300 fps**, 6 to 12 times the current rate. The real decay of Π is probably not a pure exponential, so this is only a guide.
-
-### ξ(τ\*) is already reasonably constrained
-ξ(τ) (≈ 17–18 px) and the normalized χ4/[Π(1−Π)] (≈ 45–48 px) both stay on a plateau from τ = 1 to 2–3 frames. If τ\* were far below 40 ms, ξ would already be decaying at τ = 1. The plateau suggests that the maximum of ξ lies near 40–120 ms, so **ξ(τ\*) ≈ 3 µm is a reasonable estimate**. Faster imaging would show whether there is a mild maximum inside the plateau.
-
-The dominant uncertainty in ξ is not temporal but the choice of ε (~±0.5 µm). Reducing it needs a better signal-to-noise ratio in the images, not a higher frame rate.
-
-### Experimental trade-offs
-In MOKE imaging, a higher frame rate usually means shorter exposure and noisier images. Noisier images increase σ_Δh, force a larger ε and reduce the spatial resolution of the persistence analysis. Options:
-
-- **Faster imaging with the same signal:** more illumination, a more sensitive camera, or a smaller field of view or binning.
-- **Lower driving field:** in the creep regime the wall velocity drops very steeply with field, so avalanches spread over more frames at the same 25 fps. This changes the physical operating point, since ξ and τ\* depend on the field, but measuring ξ(H) and τ\*(H) is itself what connects to creep theory.
-- **Pulsed-field protocol:** with short field pulses and one image after each pulse, the effective time resolution is set by the pulse duration rather than by the camera.
-
-### Possible next step: avalanche statistics
-Even without resolving τ\*, the current movies allow a direct avalanche analysis. Take Δh between consecutive frames, identify contiguous clusters of columns that moved, and measure the distributions of their sizes (swept area) and lateral extents. With 40 ms between frames some clusters will be several avalanches merged together, but the tails of these distributions are usually still informative. This is not implemented yet; it would be a `step4`.
