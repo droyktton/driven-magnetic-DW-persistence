@@ -82,7 +82,7 @@ So the fit-range ambiguity of ξ(τ\*) (±2 px before) disappears. At long lags 
 
 ## Avalanches
 
-`step4_avalanches.py`. An avalanche is a connected patch (8-neighbours) of pixels that switch within the same measurement window τ_m, taken from the arrival-time map; patches smaller than 20 px (0.28 µm², the resolution limit used in the thesis of this measurement) are discarded. Figures: `fig_avalanches.png`, `fig_avalanche_map.png`; comparison with the thesis in its ROI: `fig_avalanches_thesis_roi.png`.
+`step4_avalanches.py`. An avalanche is a connected patch (8-neighbours) of pixels that switch within the same measurement window τ_m, taken from the arrival-time map; patches smaller than 20 px (0.28 µm², the resolution limit used in the thesis of this measurement) are discarded, and the static defects (whose arrival time is inpainted) are excluded. Figures: `fig_avalanches.png`, `fig_avalanche_map.png`; comparison with the thesis in its ROI: `fig_avalanches_thesis_roi.png`.
 
 ```bash
 python step4_avalanches.py 0_8A_15s_20x_RT_1 --tau-m 1 3 10 30
@@ -92,12 +92,12 @@ python step4_avalanches.py 0_8A_15s_20x_RT_1 --tau-m 1 3 --roi 430 790 528 790 -
 
 Arrival times are obtained by fitting a step to each pixel's normalized intensity s(t) (the k that maximises Σ_{t<k}(s_t − 0.5)). The first version counted the frames with s > 0.5; with only ~5 % contrast, isolated noisy frames shifted the count and split single avalanches over neighbouring frames.
 
-| τ_m | avalanches ≥ 20 px | share of swept area | median S [µm²] | max S [µm²] | median ℓ_y [µm] | τ (with cutoff) | S_cut [µm²] |
+| τ_m | avalanches ≥ 20 px | share of swept area (rest: lagunas) | median S [µm²] | max S [µm²] | median ℓ_y [µm] | τ (with cutoff) | S_cut [µm²] |
 |---|---|---|---|---|---|---|---|
-| 20 s (1 frame) | 6897 | 66 % | 0.52 | 4.0 | 2.2 | 0.55 ± 0.07 | 0.55 |
-| 60 s | 5452 | 85 % | 0.77 | 8.0 | 2.6 | 0.58 ± 0.04 | 1.3 |
-| 200 s | 2406 | 96 % | 1.67 | 23 | 3.5 | 0.60 ± 0.04 | 4.6 |
-| 600 s | 735 | 99 % | 3.71 | 96 | 4.6 | 0.85 ± 0.04 | 30 |
+| 20 s (1 frame) | 6755 | 66 % | 0.54 | 4.0 | 2.2 | 0.50 ± 0.07 | 0.54 |
+| 60 s | 5348 | 86 % | 0.79 | 8.0 | 2.6 | 0.56 ± 0.04 | 1.3 |
+| 200 s | 2333 | 96 % | 1.71 | 23 | 3.6 | 0.55 ± 0.04 | 4.4 |
+| 600 s | 684 | 99 % | 4.43 | 94 | 5.1 | 0.74 ± 0.04 | 26 |
 
 τ and S_cut: maximum-likelihood fit of P(S) ∝ S^(−τ)·exp(−S/S_cut) above 20 px (the form used in the thesis); errors from the inverse Hessian.
 
@@ -105,8 +105,23 @@ Arrival times are obtained by fitting a step to each pixel's normalized intensit
 
 1. **At 20 s, a third of the advance is below the resolution.** Avalanches ≥ 0.28 µm² account for 66 % of the swept area; the rest switches in smaller steps (grey in `fig_avalanche_map.png`). With longer windows the steps coalesce, and at 600 s 99 % of the area is in resolved events.
 2. **Avalanches are thin and elongated along the wall.** At 20 s the median lateral extent is ℓ_y ≈ 2.2 µm (19 px) and the typical width S/ℓ_y only ≈ 2 px (0.24 µm), below the optical resolution (~1 µm): the advance in one frame is a thin sliver of the wall, so S is effectively displacement × length. The lateral extent is of the same order as the correlation length of the persistence analysis (ξ ≈ 0.9 µm at τ = 20 s, 1.6 µm at τ\*, 2.6 µm at ~30 min).
-3. **The size distribution is dominated by its cutoff.** At τ_m = 20 s, S_cut = 0.55 µm² is only twice the smallest resolved area, so there is no power-law range and τ is poorly determined. S_cut grows strongly with the window (0.55 → 1.3 → 4.6 → 30 µm² for 20 → 600 s): the measured events are mostly coalescences of smaller ones, as discussed in the thesis. The fitted τ (0.55–0.85) is well below the equilibrium-avalanche value 1.17 quoted in the thesis; a pure power law without cutoff would give 2.3 → 1.4, which only reflects the cutoff. Neither should be taken as an avalanche exponent.
+3. **The size distribution is dominated by its cutoff.** At τ_m = 20 s, S_cut = 0.54 µm² is only twice the smallest resolved area, so there is no power-law range and τ is poorly determined. S_cut grows strongly with the window (0.54 → 1.3 → 4.4 → 26 µm² for 20 → 600 s): the measured events are mostly coalescences of smaller ones, as discussed in the thesis. The fitted τ (0.50–0.74) is well below the equilibrium-avalanche value 1.17 quoted in the thesis; a pure power law without cutoff would give 2.3 → 1.4, which only reflects the cutoff. Neither should be taken as an avalanche exponent.
 4. **S vs ℓ_y.** The fitted 1+ζ goes from 0.6 (20 s) to 1.3 (600 s). At short windows the events are slivers a few px wide, so S ∝ ℓ_y^(<1) reflects the resolution, not the roughness; this is not a measurement of ζ.
+
+### Lagunas
+
+The thesis calls *lagunas* the parts of the swept area not covered by any detected avalanche: the wall went through them in steps smaller than the minimum area. They are the grey regions of `fig_avalanche_map.png` (defects in black). They cover 34 % of the swept area at τ_m = 20 s, 14 % at 60 s, 4 % at 200 s and 1 % at 600 s.
+
+- **Structure.** They are not uniform: they form filaments aligned with the direction of motion, which persist over many frames and curve around the defects like flow lines. Around some defects there is also a grey ring: the optical halo of the defect, where the contrast is low too (within 10 px of a defect the laguna fraction is 45 %, against 33 % elsewhere). At 20 s, 28 % of laguna pixels are isolated single pixels, 30 % are in patches of 2–5 px and 43 % in patches of 6–19 px; 82 % touch an avalanche.
+- **What they are.** Two possibilities were compared on the intensity time series of every pixel in a 230×210 px region without defects (x = 470–700, y = 130–340): (a) ambiguous borders between neighbouring avalanches, which would switch in two abrupt steps of ~0.5; (b) accumulation of steps below the resolution, which would switch gradually.
+
+  | | avalanche pixels | laguna pixels |
+  |---|---|---|
+  | transition time (s from 0.8 to 0.2) | 18 frames (6 min) | 32 frames (11 min) |
+  | largest one-frame drop of s near the arrival | 0.23 | 0.12 |
+
+  (frame noise of s: 0.017). The drops in the lagunas are small but well above the noise and there are no 0.5 steps: **the lagunas are mostly places where the wall advanced by an accumulation of small steps, ≲ 1 px per frame, more slowly** (transition ~1.8× longer). The drop of 0.23 in the avalanche pixels corresponds to an advance of ~2 px over the ~8 px point-spread function (1 µm optical resolution): in one frame the wall advances ~2 px along a long segment. The difference between an avalanche and a laguna is the local advance per frame, not a qualitatively different motion.
+- **Interpretation (to be tested).** The filaments look like *slow lanes*: positions along the wall that advance by fine creep while their neighbours jump. That they persist and follow the defects suggests they are set by the local disorder; this can be tested by comparing them with the per-row mean persistence (pinning map).
 
 ### Comparison with the thesis (same measurement)
 

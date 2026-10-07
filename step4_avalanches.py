@@ -14,8 +14,10 @@ m = 1 is one frame). For every avalanche:
   l_x    extent along x (direction of motion)
   frame  last frame of its window; x, y: centroid (registered coordinates, rows as in the image)
 Avalanches smaller than --smin px are discarded (default 20 px, the resolution limit used in
-the thesis of this measurement, ~0.3 µm^2). Patches touching the image border, the right crop
-or the never-reached side are kept but flagged (they may be cut).
+the thesis of this measurement, ~0.3 µm^2); the swept area they leave uncovered are the
+"lagunas" of the thesis. Static defects (step1 inpainted their arrival time) are excluded.
+Patches touching the image border, the right crop, the never-reached side or a defect are
+kept but flagged (they may be cut).
 
 Statistics:
   P(S), P(l_y): log-binned densities;
@@ -58,14 +60,17 @@ k_um = meta.get("um_per_px") if args.um_per_px is None else args.um_per_px
 e = np.load(os.path.join(args.dir, "tiff_extra.npz"))
 ta, y_off = e["arrival"], int(e["rows"][0])
 H, W = ta.shape
-valid = np.isfinite(ta) & (ta >= 0)
+# static defects inside the swept area carry no magnetic contrast: their arrival time was
+# inpainted in step1, so they are excluded here (not part of any avalanche nor of the lagunas)
+defects = e["defects"] if "defects" in e.files else np.zeros(ta.shape, bool)
+valid = np.isfinite(ta) & (ta >= 0) & ~defects
 K = np.where(valid, np.round(ta), -1).astype(int)
 never = np.isinf(ta)
 T = int(K.max()) + 1
 EIGHT = np.ones((3, 3), bool)
 near_edge = np.zeros((H, W), bool)
 near_edge[[0, -1], :] = near_edge[:, [0, -1]] = True
-near_edge = binary_dilation(near_edge | never, structure=EIGHT)
+near_edge = binary_dilation(near_edge | never | defects, structure=EIGHT)
 
 
 def avalanches(m):
@@ -174,7 +179,8 @@ for m in args.tau_m:
         swept_mask &= (xx >= x0) & (xx < x1) & (yy >= ya) & (yy < yb)
     swept = swept_mask.sum()
     print(f"tau_m = {m} frame(s) = {m / fps:g} s: {n} avalanches >= {args.smin:g} px "
-          f"({av['edge'].sum()} touching an edge); they cover {av['S'].sum() / swept:.0%} of the swept area"
+          f"({av['edge'].sum()} touching an edge or a defect); they cover {av['S'].sum() / swept:.0%} "
+          f"of the swept area (defects excluded); the rest, {1 - av['S'].sum() / swept:.0%}, are lagunas"
           + (" (approx., centroid in ROI)" if args.roi else ""))
     print(f"   S: median {np.median(S):.0f} px = {np.median(S) * a2:.2f} {area_unit}, "
           f"max {S.max():.0f} px = {S.max() * a2:.2f} {area_unit}; "
@@ -239,12 +245,14 @@ for j in range(win.max() + 1):
     img[mask & big] = j * m
 fig, ax = plt.subplots(figsize=(9, 7.5))
 ax.imshow(np.where(valid, 1.0, np.nan), cmap="gray", vmin=0, vmax=1.6, extent=(0, W, H + y_off, y_off))
+ax.imshow(np.where(defects, 0.0, np.nan), cmap="gray", vmin=0, vmax=1, extent=(0, W, H + y_off, y_off),
+          interpolation="nearest")
 im = ax.imshow(img, cmap="jet", extent=(0, W, H + y_off, y_off), interpolation="nearest")
 plt.colorbar(im, ax=ax, label="frame")
 if args.roi:
     x0, x1, y0, y1 = args.roi
     ax.plot([x0, x1, x1, x0, x0], [y0, y0, y1, y1, y0], "k--", lw=1)
-ax.set_title(f"Avalanches ≥ {args.smin:g} px (τ_m = {m / fps:g} s); grey: switched in smaller steps",
-             fontsize=10)
+ax.set_title(f"Avalanches ≥ {args.smin:g} px (τ_m = {m / fps:g} s); grey: lagunas (smaller steps); "
+             f"black: defects", fontsize=10)
 fig.tight_layout(); fig.savefig(os.path.join(args.dir, f"fig_avalanche_map{args.tag}.png"), dpi=110); plt.close(fig)
 print(f"outputs in {args.dir}/")
