@@ -35,6 +35,23 @@ Step 1 writes the frame rate and the spatial scale to `MOVIE/meta.json`, and ste
 
 The original video of the example is not in the repository. Without it you can start from step 2, because `magnetic_fliped/h_xt*.npy` and `meta.json` are included. To rerun step 1, copy `magnetic_fliped.mp4` into the repository root.
 
+## Coordinates: base plane, x and h
+
+The correlation function C(n,τ), and therefore ξ, is defined **along the wall**. Before computing it, a coordinate x along the wall must be defined, and for that the **base plane** of the wall has to be found: the straight line (a plane, for a 2D interface) that fits the wall on average, i.e. its mean orientation. Then
+
+- **x** is the position along the base plane, sampled at equally spaced points x_i, and n = |i − j| is a distance along it;
+- **h(x,t)** is the displacement of the wall normal to the base plane;
+- p_i, C(n,τ), ξ and χ4 are all computed in these coordinates, and the same base plane has to be used at t and t+τ, so that a column i follows the same position along the wall.
+
+If x is taken along an image axis that is not the base plane, the geometry is mixed. For a wall tilted by θ with respect to that axis, a distance n along the image axis corresponds to n/cos θ along the wall, and a displacement Δ along the other image axis to a normal displacement Δ·cos θ. With a large tilt, a fixed image column does not even stay on the same part of the wall as it advances.
+
+**What the scripts do.** The base plane is taken as an image axis:
+
+- **Video input:** the horizontal axis of the image after `--rotate`/`--flipud`/`--fliplr`. Rotate the movie so that the wall is roughly horizontal; a residual tilt is not corrected.
+- **TIFF input:** the vertical axis of the image (rows y), with h along the image x axis. Step 1 fits the actual base line in every frame, x = a + y·tan θ(t), and reports θ(t) in `tiff_extra.npz` (`theta_deg`) and `fig_tilt_overhang.png`.
+
+So, for a wall tilted by θ, ξ measured along the image axis has to be multiplied by 1/cos θ to be a length along the wall, and ε corresponds to a normal threshold ε·cos θ. In Study 2, θ = −10° to −14°, so the corrections are 1.5–3 % and are not applied. For a strongly tilted or curved wall, the frames should be rotated onto the base plane (or h measured normal to it) before step 2; this is not implemented.
+
 ## Input requirements
 
 The method assumes the following about the movie. Items 1, 2 and 4 refer to the video detection; the TIFF detection has its own assumptions, listed in its section below. Step 1 checks the ones marked ✔ and prints warnings, which are also stored in `meta.json` and repeated by step 2.
@@ -71,10 +88,10 @@ When the argument is a folder, step 1 reads its `*.tif` frames in numeric order 
 1. **Drift.** Each frame is registered to frame 0 by phase correlation of the high-passed image (defects give the texture). The drift curve is smoothed in time and applied with subpixel shifts. Rows that the vertical drift leaves without data are trimmed, plus `--trim-y` px (default 12) at each end.
 2. **Right crop.** Columns from where the illumination of the field of view falls below 90 % of its plateau (minus 20 px) are discarded, in camera coordinates and the same for every frame. `--crop-right N` sets the column by hand.
 3. **Per-pixel references.** Every frame is divided by the median of the pixels that never switch (global brightness drift). The bright reference B is the mean of the first `--nref` frames and the dark reference D the mean of the last ones. The swept area is where (B − D)/B exceeds its Otsu threshold. The normalised intensity s = (I − D)/(B − D) is 1 before and 0 after the wall passes, which cancels vignetting and static defects.
-4. **Arrival-time map.** For each pixel, the number of frames with s > 0.5 is the frame at which it switches (this assumes a monotonic advance). Defects inside the swept area show no contrast; they get the arrival time of the nearest valid pixel.
-5. **Wall.** The domain at frame t is the set of pixels with arrival ≤ t connected to the left edge, with holes filled, so isolated spots ahead of the wall are ignored. The wall position x(y,t) is the right-most domain pixel of each row y. Where the wall folds back (overhangs), this is its front. The subpixel position comes from the 0.5 crossing of s. Then h = W − 1 − x, so that h decreases with t as in the video convention, and the columns of h are the image rows y.
+4. **Arrival-time map.** For each pixel, the switching frame is the best fit of a step (s = 1 before, 0 after) to its normalised intensity s(t), i.e. the k that maximises Σ_{t<k}(s_t − 0.5); this assumes a monotonic advance and is robust to isolated noisy frames. Defects inside the swept area show no contrast; they get the arrival time of the nearest valid pixel.
+5. **Wall.** The domain at frame t is the set of pixels with arrival ≤ t connected to the left edge, with holes filled, so isolated spots ahead of the wall are ignored. The drawn wall (overlays) is the right-most domain pixel of each row y, i.e. the front where the wall folds back; the subpixel position comes from the 0.5 crossing of s. The position used for the analysis is x_eff(y,t), the number of switched pixels in row y: it equals the front where the wall is single-valued, and changes only by the area that really switched where the wall folds around defects (the front can jump when a thin unswitched channel is pinched off). Then h = W − 1 − x_eff, so that h decreases with t as in the video convention, and the columns of h are the image rows y.
 
-h is measured along x in each row y. For a wall tilted by θ from vertical, a step Δx corresponds to a normal displacement Δx·cos θ, and a distance n along y to n/cos θ along the wall. The tilt θ(t) is fitted in every frame and reported.
+h is measured along x in each row y, i.e. with the image y axis as base plane; see *Coordinates: base plane, x and h* above for the tilt correction.
 
 Extra outputs: `tiff_extra.npz` (drift, arrival map, swept area, defects, x(y,t), tilt, overhang rows per frame), `fig_drift_arrival.png`, `fig_kymograph.png`, `fig_tilt_overhang.png`, and in `qc/` an overlay movie of every frame (`overlay.mp4`) plus `overlay_NNNN.png` every `--qc-every` frames.
 
