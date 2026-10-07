@@ -98,6 +98,8 @@ Reads `MOVIE/h_xt_sub.npy`, or `MOVIE/h_xt.npy` with `--int`. For each ε (`--ep
 
 **`--row-mean`.** Computes C(n,τ) = ⟨(p_i − m_i)(p_{i+n} − m_{i+n})⟩, with m_i = ⟨p_i⟩_t the mean persistence of column i. This removes the static term ⟨m_i m_{i+n}⟩ − Π², which appears when columns advance at different average rates (for example columns pinned by defects for a long time). That term sums to zero over all pairs, so it is positive at short n and negative at large n, and it biases the fit of ξ. The identity χ4 = Σ_n (1−|n|/L)·C(n) still holds exactly. The output files get the tag `rm_` (e.g. `persistence_sub_rm_eps1.npz`), and `step3_eps_sweep.py --row-mean` reads them. Recommended for long acquisitions; see Study 2.
 
+**`--mask-defects D` (TIFF studies).** Uses only the (row, t) pairs whose wall stays farther than D px from every static defect during [t, t+τ]; `--near-defects` keeps the complement. Π, χ4 = L_eff·Var_t Π(t) and C(n) are computed with these weights (tags `md<D>_` and `nd<D>_`). D = 0 reproduces the unmasked results. **`--tau-max T`** limits the lags (the masked computation is ~3× slower; with 1800 frames, τ ≤ 250 is enough for τ\* and ξ_max). Each run is single-threaded and takes several minutes; on a desktop, run at most ~3–4 at a time with `nice -n 19`.
+
 **Noise estimate.** The script reports two estimates:
 - σ_noise(x): high-frequency roughness along x.
 - **σ_Δh**: the width of the peak of stationary columns in Δh(τ = 1). It is measured from the backward Δh values, which are pure noise when the wall never retreats.
@@ -134,6 +136,12 @@ Local wall velocity v(x,y) = 1/|∇t_arrival| from the arrival-time map smoothed
 ### `make_overlay_gif.py`: shareable movie (TIFF studies)
 
 `python make_overlay_gif.py DIR TIFF_DIR [--every 5] [--scale 0.5] [--fps-gif 12]` writes `DIR/overlay_movie.gif`: every N-th frame, drift-corrected and cropped, scaled, with the detected wall in red, the elapsed time and a 20 µm scale bar (when the scale is known). A fixed palette keeps the GIF small while preserving the overlay colours.
+
+### `step6_pinning_tests.py`: strong pinning vs collective creep (TIFF studies)
+
+`python step6_pinning_tests.py DIR [--eps 0.97] [--tau T] [--nsurr 200]`. (1) Overlays ξ(τ), χ4(τ) and χ4/[Π(1−Π)] for the whole wall and for the step2 `--mask-defects` (far) and `--near-defects` (near) results, and tabulates τ\*, ξ(τ\*) and ξ_max (`fig_mask_defects_eps<ε>.png`). (2) Tests whether persistent clusters longer than 2ξ(τ\*) sit closer to the defects than clusters moved at random along the wall (surrogate), with a planted-cluster control. (3) Fits ξ(τ) with power, log and saturating laws (AIC). (4) Measures how concentrated the waiting map 1/v is and its correlation lengths along and across the wall (`fig_pinning_tests.png`).
+
+Simulated walls can be analysed with step2/step3 by writing `DIR/h_xt_sub.npy` (frames × columns, h decreasing as the wall advances) and a `DIR/meta.json` with at least `fps` and `um_per_px` (0 for none).
 
 ## Figures
 

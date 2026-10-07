@@ -162,6 +162,38 @@ python step5_pinning_map.py 0_8A_15s_20x_RT_1          # eps = 0.97 px, tau = ta
 
 **Picture.** The wall advances in two ways that coexist along its length: intermittent avalanches (jumps of ~2 px over segments of ~2 µm, with waiting in between) and slow, steady creep in steps below the resolution along narrow lanes, many of which trail from defects. The persistence and χ4 analysis is dominated by the first; the lagunas and the slow lanes are the second.
 
+## Strong pinning vs collective creep
+
+Question raised by colleagues: could the χ4 peak and ξ come from a few **strong pinning centres** rather than from collective creep (many weak pins, elastic correlation)? With strong pins, the correlated persistent regions should be centred on the pins, their size should be set by the pins and saturate early, and they should disappear far from the pins. With collective creep, correlated regions appear anywhere along the wall and ξ grows slowly with τ. `step6_pinning_tests.py` runs four tests (figures `fig_mask_defects_eps0.97.png`, `fig_pinning_tests.png`):
+
+```bash
+# near / far from the 33 static defects (mean spacing 124 px = 14.6 µm, ~9 ξ(τ*)); run at most a few at a time
+python step2_persistence.py 0_8A_15s_20x_RT_1 --row-mean --eps 0.97 --tau-max 250 --mask-defects D [--near-defects]
+python step6_pinning_tests.py 0_8A_15s_20x_RT_1 --eps 0.97
+```
+
+**1. Near vs far from the defects.** `--mask-defects D` keeps only the (row, t) pairs whose wall stays farther than D px from every defect during [t, t+τ]; `--near-defects` keeps the complement. D = 0 reproduces the unmasked results (|Δξ| < 1e-8).
+
+| subset | data kept at τ\* | τ\* [frames] | χ4(τ\*) | ξ(τ\*) [µm] | ξ_max [µm] (τ) |
+|---|---|---|---|---|---|
+| all | 100 % | 7 | 5.2 | 1.58 ± 0.02 | 2.57 (88) |
+| far, D = 10 px | 90 % | 7 | 4.7 | 1.61 ± 0.02 | 2.87 (95) |
+| far, D = 20 px | 82 % | 7 | 4.8 | 1.59 ± 0.01 | 2.88 (95) |
+| far, D = 40 px | 69 % | 9 | 5.1 | 1.68 ± 0.02 | 3.01 (105) |
+| far, D = 80 px | 43 % | 11 | 6.2 | 1.59 ± 0.03 | 2.91 (92) |
+| near, D = 20 px | 19 % | 21 | 5.0 | 1.71 ± 0.09 | 1.75 (28) |
+| near, D = 40 px | 31 % | 7 | 5.1 | 1.54 ± 0.05 | 2.59 (70) |
+
+**The χ4 peak and ξ survive intact far from the defects**: with the wall more than 80 px (9 µm, ~6 ξ_max) from any defect, the peak is still there with the same height and ξ(τ\*) is unchanged (1.59 µm); ξ_max is even slightly larger far from the defects (2.9–3.0 µm) than on the whole wall (2.6 µm). Near the defects the correlation is not stronger: ξ_max is smaller and the χ4 peak is broader and later (D = 20). Part of the reduction near the defects is geometric: the near subset is made of short segments of the wall (≈ defect size + 2D), which limits the measurable ξ; the far subset has no such limitation and is the conclusive one.
+
+**2. Location of the persistent clusters** (runs of consecutive persistent rows at τ\*). Clusters longer than 2ξ(τ\*) (13 056 of 51 368) are not concentrated at the defects: the fraction of cluster centres within 10 px of a defect equals the surrogate (clusters moved at random along the wall at the same t, 200 replicas): ratio 1.00; within 20 and 40 px there is a small excess, ratio 1.10 and 1.04 (p = 0.005). Clusters planted at the defects, as a control, give ratios 7.4, 4.4 and 2.8, so the test is sensitive. Clusters are also *shorter* next to the defects (15.6 px within 10 px, ~20 px farther away): defects cut the correlated regions rather than create them.
+
+**3. Growth of ξ(τ).** ξ grows from 7.8 to 21.9 px between τ = 1 and 88 frames without saturating. A saturating form a(1−e^{−τ/c})+d fits worst (AIC −105), a power law best (exponent 0.20, AIC −266), a log law in between (AIC −178). No early saturation at a pin-set scale.
+
+**4. Hidden strong pins** (not visible as defects). A point-like strong pin holds the wall for a long time in a small spot. In the waiting map 1/v the slowest 1 % of the pixels hold 9 % of the total waiting time (slowest 5 %: 24 %): some concentration, but no dominant point-like spots. The slow regions are extended along the wall: correlation length of ln(1/v) is 11 px (1.3 µm) along the wall, of the order of ξ(τ\*), and 6 px across. (Locating "hidden pins" as the slowest points and testing whether persistent clusters sit there would be circular: persistence and slowness are the same thing.)
+
+**Conclusion.** The visible strong defects do not produce the χ4 peak or the correlation length: both are unchanged, or ξ_max even larger, far from them, and persistent clusters are not attached to them. The slow regions are extended at the scale of ξ and ξ(τ) grows without saturation, as expected for collective creep. These tests cannot exclude pinning centres that are strong but dense and invisible (below the resolution), with spacing ≲ ξ; such a landscape is, in practice, the collective-pinning picture. The decisive remaining tests are (a) the field dependence of ξ and τ\* (collective creep: ξ grows as H decreases; pin-dominated: fixed), which needs the measurements at 20.7–24.2 Oe, and (b) the same analysis on simulations of an elastic line with weak disorder, with and without added sparse strong pins: step2–step6 run on any `h_xt_sub.npy` + `meta.json`.
+
 ## Next steps
 
 - Map the per-row mean persistence m_i (and mean velocity per row) against the defect positions: the static heterogeneity removed by the row-mean subtraction is itself a measure of the pinning landscape.

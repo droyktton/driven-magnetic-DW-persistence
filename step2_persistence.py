@@ -21,6 +21,14 @@ persistence of column i. This removes the static part <m_i m_{i+n}> - Pi^2, whic
 columns that advance at different average rates (e.g. strongly pinned rows) and always sums to
 zero over all pairs, so it is positive at short n and negative at large n. The identity with
 chi4 still holds exactly, because chi4 = (1/L) sum_ij cov_t(p_i, p_j).
+
+--mask-defects D (TIFF studies): only (row i, start time t) pairs whose wall point stays farther
+than D px from every static defect during [t, t+tau] are used (weights w_i(t) in {0,1}):
+Pi(t) = sum w p / sum w, chi4 = L_eff Var_t[Pi(t)] with L_eff = <sum_i w_i>_t, and
+C(n) = sum w_i w_{i+n} q_i q_{i+n} / sum w_i w_{i+n}. The identity with chi4 is then only
+approximate. Tag "md<D>_". D = 0 keeps everything and reproduces the unmasked results.
+--near-defects with --mask-defects D keeps the complement (wall within D px of a defect at some
+time in [t, t+tau]); tag "nd<D>_". Comparing the two isolates the contribution of the defects.
 """
 import argparse
 import json
@@ -44,6 +52,13 @@ ap.add_argument("--eps", type=float, nargs="+", default=None,
                 help="thresholds in px (default: 1, 2 and 3*sigma_Dh; with --int: 1 and 2)")
 ap.add_argument("--row-mean", action="store_true",
                 help="subtract the mean persistence of each column before computing C(n)")
+ap.add_argument("--mask-defects", type=float, default=None, metavar="D",
+                help="TIFF studies: use only (row, t) pairs whose wall stays farther than D px from any "
+                     "static defect during [t, t+tau] (D = 0: no exclusion, masked formulas)")
+ap.add_argument("--near-defects", action="store_true",
+                help="with --mask-defects D: keep the complement instead, i.e. the (row, t) pairs whose "
+                     "wall comes within D px of a defect during [t, t+tau]")
+ap.add_argument("--tau-max", type=int, default=None, help="largest lag in frames (default: half the frames)")
 ap.add_argument("--nmax", type=int, default=300, help="maximum n for C(n)")
 ap.add_argument("--min-pers", type=int, default=200,
                 help="minimum number of persistent events (sum p) to fit xi")
@@ -57,10 +72,12 @@ if args.um_per_px is None:
     args.um_per_px = meta.get("um_per_px") or 0.0
 for w in meta.get("warnings", []):
     print("WARNING (step1):", w)
-tag0 = ("" if args.int else "sub_") + ("rm_" if args.row_mean else "")
+tag0 = (("" if args.int else "sub_") + ("rm_" if args.row_mean else "")
+        + ((f"nd{args.mask_defects:g}_" if args.near_defects else f"md{args.mask_defects:g}_")
+           if args.mask_defects is not None else ""))
 h = np.load(os.path.join(args.dir, "h_xt.npy" if args.int else "h_xt_sub.npy"))
 T, L = h.shape
-taus = np.arange(1, T // 2 + 1)
+taus = np.arange(1, min(T // 2, args.tau_max or T) + 1)
 
 # segmentation noise: high-frequency roughness along x
 sigma_noise = (h - gaussian_filter1d(h, 3, axis=1)).std()
@@ -83,6 +100,18 @@ print(f"L={L} columns, T={T} frames, sigma_noise(high freq. along x)={sigma_nois
       f"sigma_Dh(still columns, backward steps)={sigma_dh:.2f} px")
 
 
+dist_wall = None
+if args.mask_defects is not None:
+    # distance from the wall point (x(y_i, t), y_i) to the nearest static defect, in px
+    from scipy.ndimage import distance_transform_edt, minimum_filter1d
+    ex = np.load(os.path.join(args.dir, "tiff_extra.npz"))
+    dmap = distance_transform_edt(~ex["defects"])
+    xw = np.clip(np.round(meta["height"] - 1 - h).astype(int), 0, dmap.shape[1] - 1)   # h = W-1-x
+    dist_wall = dmap[np.arange(L)[None, :], xw]
+    print(f"--mask-defects {args.mask_defects:g}: wall farther than {args.mask_defects:g} px from a "
+          f"defect in {np.mean(dist_wall > args.mask_defects):.0%} of the (row, frame) pairs")
+
+
 def expo(n, A, xi, B):
     return A * np.exp(-n / xi) + B
 
@@ -94,23 +123,55 @@ def analyse(eps):
                chi4_sumC=np.zeros(len(taus)), chi4_model=np.full(len(taus), np.nan),
                xi=np.full(len(taus), np.nan), xi_err=np.full(len(taus), np.nan),
                A=np.full(len(taus), np.nan), B=np.full(len(taus), np.nan),
-               C=np.zeros((len(taus), nmax + 1)), npers=np.zeros(len(taus)))
+               C=np.zeros((len(taus), nmax + 1)), npers=np.zeros(len(taus)),
+               L_eff=np.full(len(taus), float(L)), kept=np.ones(len(taus)))
     for k, tau in enumerate(taus):
         p = (np.abs(h[tau:] - h[:-tau]) < eps).astype(float)   # (T-tau, L)
-        Pit = p.mean(1)
-        Pi = Pit.mean()
-        out["Pi"][k] = Pi
-        out["npers"][k] = p.sum()
-        out["chi4"][k] = L * Pit.var()
-        # C(n) for every n (via FFT) -> exact identity with chi4
-        q = p - p.mean(0) if args.row_mean else p
-        f = np.fft.rfft(q, n=2 * L, axis=1)
-        ac = np.fft.irfft(f * np.conj(f), axis=1)[:, :L].mean(0)   # sum_i q_i q_{i+n}, averaged over t
-        Cfull = ac / (L - np.arange(L)) - (0 if args.row_mean else Pi ** 2)
+        if dist_wall is None:
+            Pit = p.mean(1)
+            Pi = Pit.mean()
+            out["Pi"][k] = Pi
+            out["npers"][k] = p.sum()
+            out["chi4"][k] = L * Pit.var()
+            # C(n) for every n (via FFT) -> exact identity with chi4
+            q = p - p.mean(0) if args.row_mean else p
+            f = np.fft.rfft(q, n=2 * L, axis=1)
+            ac = np.fft.irfft(f * np.conj(f), axis=1)[:, :L].mean(0)   # sum_i q_i q_{i+n}, averaged over t
+            Cfull = ac / (L - np.arange(L)) - (0 if args.row_mean else Pi ** 2)
+        else:
+            # keep (row, t) only if the wall stays farther than D from every defect during [t, t+tau]
+            dmin = minimum_filter1d(dist_wall, size=tau + 1, axis=0, mode="nearest",
+                                    origin=-((tau + 1) // 2))[:T - tau]
+            if args.near_defects:
+                wgt = dmin <= args.mask_defects
+            else:
+                wgt = (dmin > args.mask_defects) if args.mask_defects > 0 else np.ones_like(p, bool)
+            wgt = wgt.astype(float)
+            nt = wgt.sum(1)
+            tt = nt > 0
+            Pit = (wgt * p).sum(1)[tt] / nt[tt]
+            Pi = (wgt * p).sum() / wgt.sum()
+            out["Pi"][k] = Pi
+            out["npers"][k] = (wgt * p).sum()
+            out["L_eff"][k] = nt[tt].mean()
+            out["kept"][k] = wgt.mean()
+            out["chi4"][k] = out["L_eff"][k] * Pit.var()
+            if args.row_mean:
+                with np.errstate(invalid="ignore"):
+                    mi = np.nan_to_num((wgt * p).sum(0) / wgt.sum(0))
+                q = (p - mi) * wgt
+            else:
+                q = p * wgt
+            fq = np.fft.rfft(q, n=2 * L, axis=1)
+            fw = np.fft.rfft(wgt, n=2 * L, axis=1)
+            num = np.fft.irfft(fq * np.conj(fq), axis=1)[:, :L].sum(0)
+            den = np.fft.irfft(fw * np.conj(fw), axis=1)[:, :L].sum(0)
+            with np.errstate(invalid="ignore", divide="ignore"):
+                Cfull = np.where(den > 0.5, num / den, np.nan) - (0 if args.row_mean else Pi ** 2)
         w = 1 - np.arange(L) / L
-        out["chi4_sumC"][k] = Cfull[0] + 2 * np.sum(w[1:] * Cfull[1:])
+        out["chi4_sumC"][k] = Cfull[0] + 2 * np.nansum(w[1:] * Cfull[1:])
         out["C"][k] = Cfull[: nmax + 1]
-        if out["npers"][k] < args.min_pers or Pi <= 0:
+        if out["npers"][k] < args.min_pers or Pi <= 0 or not np.isfinite(Cfull[: nmax + 1]).all():
             continue
         C = Cfull[: nmax + 1]
         try:
@@ -124,13 +185,13 @@ def analyse(eps):
         out["A"][k], out["xi"][k], out["B"][k] = A, xi, B
         out["xi_err"][k] = np.sqrt(pcov[1, 1])
         # discrete sum of the model: A coth(1/2xi) (exponential part) + B L (plateau)
-        out["chi4_model"][k] = A / np.tanh(1 / (2 * xi)) + B * L
+        out["chi4_model"][k] = A / np.tanh(1 / (2 * xi)) + B * out["L_eff"][k]
     # chi4 normalized by the single-site variance Pi(1-Pi): an effective correlated
     # length in px (~ 2 xi when the plateau B L is negligible)
     var1 = out["Pi"] * (1 - out["Pi"])
     with np.errstate(invalid="ignore", divide="ignore"):
         out["chi4_norm"] = np.where(var1 > 0, out["chi4"] / var1, np.nan)
-        out["chi4_norm_local"] = np.where(var1 > 0, (out["chi4"] - out["B"] * L) / var1, np.nan)
+        out["chi4_norm_local"] = np.where(var1 > 0, (out["chi4"] - out["B"] * out["L_eff"]) / var1, np.nan)
     return out
 
 
