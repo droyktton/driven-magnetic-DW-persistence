@@ -27,6 +27,7 @@ python step1_extract_wall.py /path/RUN/Pos0 --um-per-px 0      # TIFF frames -> 
 python step2_persistence.py MOVIE --eps 0.25 0.5 0.75 1 1.5 2 3  # subpixel h
 python step2_persistence.py MOVIE --int                          # integer h, ε = 1, 2
 python step3_eps_sweep.py MOVIE                                  # sensitivity to ε
+python step4_avalanches.py MOVIE --tau-m 1 3 10                  # avalanches (TIFF studies)
 ```
 
 Step 1 writes the frame rate and the spatial scale to `MOVIE/meta.json`, and steps 2 and 3 read them from there. By default, the frame rate is the one stored in the video (for TIFF: from the timestamps in Micro-Manager's `metadata.txt`) and the scale is 0.17 µm/px. You can override either with `--fps` or `--um-per-px` in any step. `--um-per-px 0` reports everything in pixels only.
@@ -114,6 +115,16 @@ The tag is `sub_` for subpixel h and empty for integer h. The script also prints
 ### `step3_eps_sweep.py`: sensitivity to ε
 
 Reads every `MOVIE/persistence_sub_eps*.npz` file, or the integer-h files with `--int`. It overlays ξ(τ) and χ4(τ) for each ε and plots ξ(τ=1) and χ4(τ=1) against ε. σ_Δh and µm/px are read from the `.npz` files. Output: `MOVIE/fig_eps_sweep_sub.png`, or `fig_eps_sweep_int.png` with `--int`.
+
+### `step4_avalanches.py`: avalanche statistics (TIFF studies)
+
+Reads the arrival-time map in `DIR/tiff_extra.npz`. An avalanche is a connected patch (8-neighbours) of pixels that switch within the same measurement window τ_m (`--tau-m`, in frames; several values can be given). Patches smaller than `--smin` px (default 20) are discarded. For each avalanche it stores the area S, the extents ℓ_y (along the wall) and ℓ_x, the centroid and the frame, and flags those touching the image edge or the never-reached region.
+
+- P(S) is fitted by maximum likelihood with P(S) ∝ S^(−τ)·exp(−S/S_cut) above `--smin`, with errors from the inverse Hessian. A pure power law (no cutoff) is also printed, for reference only.
+- S ∝ ℓ_y^(1+ζ) is fitted on the median S in log bins of ℓ_y.
+- `--roi X0 X1 Y0 Y1` keeps avalanches whose centroid is in a region (camera px); `--compare FILE` overlays another list of areas in px (second column), e.g. the thesis list; `--tag` adds a suffix to the output files.
+
+Outputs: `avalanches<tag>_tm<m>.npz`, `fig_avalanches<tag>.png` (P(S) with fits, P(ℓ_y), S vs ℓ_y) and `fig_avalanche_map<tag>.png` (avalanches of the first window coloured by frame; grey: area that switched in steps smaller than `--smin`).
 
 ## Figures
 

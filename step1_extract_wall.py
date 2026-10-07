@@ -17,9 +17,10 @@ to the RIGHT (wall roughly vertical, may be tilted). Steps:
   3. per-pixel bright (first --nref frames) and dark (last --nref frames) references, after
      normalising every frame by the median of the pixels that never switch. This cancels
      vignetting and static defects;
-  4. arrival-time map: the frame at which each pixel switches (number of frames in which it is
-     still bright; the advance is assumed monotonic). Static defects inside the swept area,
-     which never show contrast, get the arrival time of the nearest valid pixel;
+  4. arrival-time map: the frame at which each pixel switches, from the best fit of a step
+     (s = 1 before, 0 after) to its normalised intensity s(t); the advance is assumed
+     monotonic. Static defects inside the swept area, which never show contrast, get the
+     arrival time of the nearest valid pixel;
   5. domain at frame t = pixels with arrival <= t connected to the left edge; the drawn wall is
      the right-most domain pixel of each row after filling holes (front of overhangs), subpixel
      by linear interpolation of the 0.5 crossing of the normalised intensity;
@@ -300,10 +301,17 @@ def wall_from_tiffs():
     M = c > thr_c                                     # pixels swept during the movie
     den = np.where(M, B - Dk, 1.0)
 
-    # 3. arrival-time map: number of frames in which the pixel is still bright
+    # 3. arrival-time map: best step fit of s(t) per pixel (1 before switching, 0 after), i.e. the
+    # k that maximises sum_{t<k} (s_t - 0.5). Isolated noisy frames do not move the step, unlike
+    # counting the frames with s > 0.5, which spreads one avalanche over neighbouring frames.
+    cum = np.zeros(M.shape, np.float32)
+    best = np.zeros(M.shape, np.float32)
     ta = np.zeros(M.shape, np.int32)
-    for bright in pmap(lambda k: (norm(reg(k)) - Dk) / den > 0.5, range(T)):
-        ta += bright & M
+    for k, s in enumerate(pmap(lambda k: np.clip((norm(reg(k)) - Dk) / den, -0.5, 1.5), range(T))):
+        cum += s - 0.5
+        up = cum > best
+        best[up], ta[up] = cum[up], k + 1
+    ta[~M] = 0
     lab, _ = label(~M)
     edge_ids = lambda col: np.setdiff1d(np.unique(col), [0])
     A = np.isin(lab, edge_ids(lab[:, 0]))                       # initial domain (always dark)

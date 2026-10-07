@@ -19,12 +19,12 @@
   ],
   "contrast_threshold": 0.026573222130537033,
   "n_defect_px": 8841,
-  "frac_rows_front_ne_area": 0.08403633753037332,
+  "frac_rows_front_ne_area": 0.08165506958250497,
   "tilt_deg_first_last": [
     -12.793002667924961,
     -9.776732300795468
   ],
-  "overhang_rows_mean": 52.925,
+  "overhang_rows_mean": 50.815555555555555,
   "nref": 5,
   "geometry": "dark domain on the left, wall moving to +x; h = W-1-x_eff (switched area per row), columns of h = image rows y0..y1-1 (registered to frame 0)",
   "median_x": 5,
