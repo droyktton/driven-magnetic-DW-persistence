@@ -218,6 +218,21 @@ python step7_roughness.py 0_8A_15s_20x_RT_1 --every 5 --rmin 25
 - **The exponent fluctuates in time** (0.53–1.01 between thirds of the run): the large scales of a single wall evolve slowly, so each third contains few independent configurations. The global value has a correspondingly large error.
 - **Scale dependence.** ζ_eff(r) = ½ d ln B/d ln r decreases from ~0.9 at r ≈ 0.1–1 µm (below the resolution, not physical) to ~0.6 at 5–10 µm and then saturates. No clear crossover appears near ξ(τ\*) or ξ_max (1.6–2.6 µm), which are too close to the resolution to separate regimes.
 
+### Height distribution
+
+Also from `step7_roughness.py` (`fig_height_distribution.png`, `height_distribution.npz`): the distribution of the deviations δu(s,t) = u(s,t) − ⟨u⟩_s(t) of every point of the wall from its mean position, **on the base plane of each frame** (rotation by θ0 plus the residual line of the frame, equivalent to rotating each frame by its own θ(t)), normalised by the width σ(t) of each frame. u increases in the direction of motion, so δu < 0 means a part of the wall lagging behind. Errors: block bootstrap over time.
+
+| | width σ | skewness | excess kurtosis |
+|---|---|---|---|
+| whole wall, base plane (u_area) | 5.5 µm | −0.38 ± 0.19 | −0.18 ± 0.32 |
+| whole wall, mean only (no per-frame line) | 5.6 µm | −0.56 ± 0.23 | +0.23 ± 0.36 |
+| windows of 20 µm, line removed | 1.7 µm | −0.28 ± 0.05 | +0.86 ± 0.26 |
+| windows of 5 µm, line removed | 0.5 µm | +0.10 ± 0.12 | +7.3 ± 1.3 |
+
+- **Whole wall:** not Gaussian, with a sharp cut at +2σ, a tail behind and a dip at the centre. At this scale the distribution is dominated by the few largest modes of a single wall (the large bulge), so it does not self-average; the skewness is barely significant. Without the per-frame line (mean only) the residual tilt adds to the asymmetry: the rotation matters here.
+- **Windows of 20 µm:** close to Gaussian, with a small but significant **negative skewness** (−0.28 ± 0.05): more parts of the wall lag behind the local mean than run ahead of it, as expected for a wall held back locally by pinning while the rest advances.
+- **Windows of 5 µm:** fat tails (excess kurtosis +7). They grow strongly with u_front and u_back (+16 and +26), so they come mostly from the overhangs and from steps at the scale of the resolution (σ = 0.5 µm ≈ 4 px here); they should not be read as a property of the elastic line.
+
 ## Next steps
 
 - Map the per-row mean persistence m_i (and mean velocity per row) against the defect positions: the static heterogeneity removed by the row-mean subtraction is itself a measure of the pinning landscape.

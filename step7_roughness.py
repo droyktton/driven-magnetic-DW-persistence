@@ -3,7 +3,8 @@
 Usage: python step7_roughness.py DIR [--every 5] [--rmin 16] [--mask-d 20]
        python step7_roughness.py DIR --from-h [--every 1]       (video studies, simulations)
        python step7_roughness.py --selftest                     (synthetic wall with known zeta)
-Outputs in DIR: roughness.npz, fig_roughness.png and a summary on stdout.
+Outputs in DIR: roughness.npz, fig_roughness.png, height_distribution.npz,
+fig_height_distribution.png and a summary on stdout.
 
 TIFF studies. The wall is tilted in the image (Study 2: ~ -12 deg), and h(y,t) contains that slope,
 which would dominate any roughness measurement. Here every frame is put on the base plane:
@@ -31,6 +32,12 @@ scale where the three heights start to differ because of overhangs. Self-test (s
 --selftest): S(q) is unbiased, B(r) underestimates zeta >= 0.66 (0.58 for 0.66, 0.78 for 1) and
 w(l) underestimates zeta ~ 1; S(q) is the reference estimator. Overhangs only distort scales up to their size: where u_area,
 u_front and u_back give the same S(q), the exponent is not affected by them.
+Height distribution: P(du/sigma) of the deviations du(s,t) = u(s,t) - <u>_s(t) from the base plane of
+each frame (rotation by theta0 + per-frame line = rotation by theta(t)), normalised by the width
+sigma(t) of each frame, with skewness and excess kurtosis (block-bootstrap errors). Also shown:
+the deviation from the mean only (no per-frame line, the residual tilt broadens it), the three
+heights (overhangs act on the tails) and local distributions in windows of 5 and 20 um with a
+line removed in each window.
 --from-h uses DIR/h_xt_sub.npy directly (no rotation, no overhangs), with the per-frame line fit.
 """
 import argparse
@@ -307,6 +314,82 @@ np.savez(os.path.join(args.dir, "roughness.npz"), theta0=theta0, frames=frames, 
          rmin=args.rmin, rmax=rmax, um_per_px=k_um,
          **{f"{n}_{k}": v for n, r_ in res.items() for k, v in r_.items()
             if k in ("q", "S", "r", "B", "Bm", "l", "W2", "zS", "dzS", "zB", "zBm", "zW", "zS_thirds") and v is not None})
+
+# ------------------------------------------------------------------ height distribution
+def moments(x):
+    x = x - x.mean()
+    sd = x.std()
+    return np.mean(x ** 3) / sd ** 3, np.mean(x ** 4) / sd ** 4 - 3
+
+
+def local_residuals(du, l):
+    """Residuals of du after a line fit in non-overlapping windows of length l, per frame."""
+    l = int(l)
+    out = []
+    x = np.arange(l)
+    A = np.vstack([x, np.ones(l)]).T
+    P = A @ np.linalg.pinv(A)
+    for s0 in range(0, du.shape[1] - l + 1, l):
+        seg = du[:, s0:s0 + l]
+        out.append(seg - seg @ P.T)
+    return np.concatenate(out, axis=1)
+
+
+ZB = np.linspace(-5, 5, 61)
+hdist = {}
+rng_h = np.random.default_rng(2)
+for name, u in U.items():
+    du, _ = detrend(u)                                   # deviation from the base plane of each frame
+    variants = {"base plane": du, "mean only": u - u.mean(1, keepdims=True)}
+    for l_um in (5, 20):
+        l_px = l_um / kk if k_um else l_um * 8
+        if l_px * 3 < du.shape[1]:
+            variants[f"local {l_um:g} {unit}"] = local_residuals(du, l_px)
+    for vname, d in variants.items():
+        z = d / d.std(1, keepdims=True)                  # normalised by the width of each frame
+        hist, _ = np.histogram(z.ravel(), ZB, density=True)
+        sk, ku = moments(z.ravel())
+        blocks = np.array_split(np.arange(z.shape[0]), 12)
+        bs = []
+        for _ in range(200):
+            pick = np.concatenate([blocks[j] for j in rng_h.integers(0, 12, 12)])
+            bs.append(moments(z[pick].ravel()))
+        bs = np.array(bs)
+        hdist[(name, vname)] = dict(hist=hist, skew=sk, kurt=ku, dskew=bs[:, 0].std(), dkurt=bs[:, 1].std(),
+                                    width=d.std(1).mean())
+print("height distribution (deviation from the mean of each frame, normalised by its width):")
+for (name, vname), hd_ in hdist.items():
+    print(f"  {name:6s} {vname:14s} width {hd_['width'] * kk:6.2f} {unit}  skewness {hd_['skew']:+.2f} ± {hd_['dskew']:.2f}  "
+          f"excess kurtosis {hd_['kurt']:+.2f} ± {hd_['dkurt']:.2f}")
+np.savez(os.path.join(args.dir, "height_distribution.npz"), bins=ZB,
+         **{f"{n}|{v}|{k}": val for (n, v), d_ in hdist.items() for k, val in d_.items()})
+
+fig, ax = plt.subplots(1, 3, figsize=(17, 4.6))
+zc = 0.5 * (ZB[1:] + ZB[:-1])
+gauss = np.exp(-zc ** 2 / 2) / np.sqrt(2 * np.pi)
+mainh = "area" if "area" in U else "h"
+for a_ in ax:
+    a_.semilogy(zc, gauss, "k--", lw=1, label="Gaussian")
+for j, (vname, c) in enumerate((("base plane", "C0"), ("mean only", "C7"))):
+    d_ = hdist[(mainh, vname)]
+    ax[0].semilogy(zc, np.where(d_["hist"] > 0, d_["hist"], np.nan), "o-", ms=3, color=c,
+                   label=f"{vname}: S={d_['skew']:+.2f}, K={d_['kurt']:+.2f}")
+ax[0].set_title(f"P(δu/σ), {mainh}: base plane vs mean only", fontsize=10)
+for name, c in (("area", "C0"), ("front", "C3"), ("back", "C2"), ("h", "C0")):
+    if (name, "base plane") in hdist:
+        d_ = hdist[(name, "base plane")]
+        ax[1].semilogy(zc, np.where(d_["hist"] > 0, d_["hist"], np.nan), "o-", ms=3, color=c,
+                       label=f"{name}: S={d_['skew']:+.2f}, K={d_['kurt']:+.2f}")
+ax[1].set_title("Overhang sensitivity (area / front / back)", fontsize=10)
+for vname, c in ((f"local 5 {unit}", "C1"), (f"local 20 {unit}", "C4"), ("base plane", "C0")):
+    if (mainh, vname) in hdist:
+        d_ = hdist[(mainh, vname)]
+        ax[2].semilogy(zc, np.where(d_["hist"] > 0, d_["hist"], np.nan), "o-", ms=3, color=c,
+                       label=f"{vname}: S={d_['skew']:+.2f}, K={d_['kurt']:+.2f}")
+ax[2].set_title("Local (windows, line removed) vs whole wall", fontsize=10)
+for a_ in ax:
+    a_.set_xlabel(r"$\delta u/\sigma$"); a_.set_ylabel("probability density"); a_.set_ylim(1e-5, 1); a_.legend(fontsize=7)
+fig.tight_layout(); fig.savefig(os.path.join(args.dir, "fig_height_distribution.png"), dpi=120); plt.close(fig)
 
 # ------------------------------------------------------------------ figure
 fig, ax = plt.subplots(1, 4, figsize=(22, 5))
