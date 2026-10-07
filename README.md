@@ -131,6 +131,10 @@ Outputs: `avalanches<tag>_tm<m>.npz`, `fig_avalanches<tag>.png` (P(S) with fits,
 
 Local wall velocity v(x,y) = 1/|∇t_arrival| from the arrival-time map smoothed over `--sigma` px (default 4), lagunas (swept pixels that switched in 1-frame patches smaller than `--smin` px), and per-row values: mean persistence m_i at threshold `--eps` and lag `--tau` (default: τ\* for that ε), mean velocity and laguna fraction of each row. Prints the velocity in lagunas vs avalanches, the correlations between the per-row quantities (all rows and rows without defects in the path) and their correlation lengths along the wall. Output: `fig_pinning_map.png`.
 
+### `make_overlay_gif.py`: shareable movie (TIFF studies)
+
+`python make_overlay_gif.py DIR TIFF_DIR [--every 5] [--scale 0.5] [--fps-gif 12]` writes `DIR/overlay_movie.gif`: every N-th frame, drift-corrected and cropped, scaled, with the detected wall in red, the elapsed time and a 20 µm scale bar (when the scale is known). A fixed palette keeps the GIF small while preserving the overlay colours.
+
 ## Figures
 
 | File | What it shows |

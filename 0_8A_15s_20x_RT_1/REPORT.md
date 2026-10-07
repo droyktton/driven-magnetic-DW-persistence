@@ -25,6 +25,8 @@ python step2_persistence.py 0_8A_15s_20x_RT_1 --int                  # cross-che
 
 ## Wall extraction and checks
 
+**Movie of the whole measurement:** [`overlay_movie.gif`](overlay_movie.gif) (10 h, every 5th frame = one image every 100 s, drift-corrected, detected wall in red, 20 µm scale bar; 33 MB). Made with `python make_overlay_gif.py 0_8A_15s_20x_RT_1 /media/…/0_8A_15s_20x_RT_1/Pos0 --every 5`. The full-resolution movie of all 1800 frames is `qc/overlay.mp4`.
+
 Details in the README (step 1, *TIFF folder input*). Points specific to this data set:
 
 - **Sample drift.** The sample moves rigidly by up to dy = −9.3 px and dx = −4.4…+3.5 px over the 10 h (`fig_drift_arrival.png`, left). Uncorrected, the dx drift alone would be a slow fake displacement equal to ~16 frames of real wall motion. Every frame is registered to frame 0; the measured drift scatters by only 0.03–0.04 px around its smoothed curve.
