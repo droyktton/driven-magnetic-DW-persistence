@@ -28,6 +28,7 @@ python step2_persistence.py MOVIE --eps 0.25 0.5 0.75 1 1.5 2 3  # subpixel h
 python step2_persistence.py MOVIE --int                          # integer h, ε = 1, 2
 python step3_eps_sweep.py MOVIE                                  # sensitivity to ε
 python step4_avalanches.py MOVIE --tau-m 1 3 10                  # avalanches (TIFF studies)
+python step5_pinning_map.py MOVIE                                # pinning map (TIFF studies)
 ```
 
 Step 1 writes the frame rate and the spatial scale to `MOVIE/meta.json`, and steps 2 and 3 read them from there. By default, the frame rate is the one stored in the video (for TIFF: from the timestamps in Micro-Manager's `metadata.txt`) and the scale is 0.17 µm/px. You can override either with `--fps` or `--um-per-px` in any step. `--um-per-px 0` reports everything in pixels only.
@@ -125,6 +126,10 @@ Reads the arrival-time map in `DIR/tiff_extra.npz`. An avalanche is a connected 
 - `--roi X0 X1 Y0 Y1` keeps avalanches whose centroid is in a region (camera px); `--compare FILE` overlays another list of areas in px (second column), e.g. the thesis list; `--tag` adds a suffix to the output files.
 
 Outputs: `avalanches<tag>_tm<m>.npz`, `fig_avalanches<tag>.png` (P(S) with fits, P(ℓ_y), S vs ℓ_y) and `fig_avalanche_map<tag>.png` (avalanches of the first window coloured by frame; grey: area that switched in steps smaller than `--smin`).
+
+### `step5_pinning_map.py`: pinning map (TIFF studies)
+
+Local wall velocity v(x,y) = 1/|∇t_arrival| from the arrival-time map smoothed over `--sigma` px (default 4), lagunas (swept pixels that switched in 1-frame patches smaller than `--smin` px), and per-row values: mean persistence m_i at threshold `--eps` and lag `--tau` (default: τ\* for that ε), mean velocity and laguna fraction of each row. Prints the velocity in lagunas vs avalanches, the correlations between the per-row quantities (all rows and rows without defects in the path) and their correlation lengths along the wall. Output: `fig_pinning_map.png`.
 
 ## Figures
 

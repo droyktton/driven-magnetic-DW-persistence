@@ -146,6 +146,21 @@ python 0_8A_15s_20x_RT_1/compare_thesis_fields.py /media/…/ResumenMaestría_Ma
 
 Without the frames of the 24.2 Oe measurement, these conclusions rest on the thesis method; the halo correction obtained at 46.1 Oe cannot be transferred reliably because it depends on the event shapes. Running this pipeline on the raw frames of the other measurements (0_36A, 0_38A, 0_42A) is pending.
 
+## Pinning map
+
+`step5_pinning_map.py` (`fig_pinning_map.png`):
+
+```bash
+python step5_pinning_map.py 0_8A_15s_20x_RT_1          # eps = 0.97 px, tau = tau* = 7 frames
+```
+
+- **Local velocity map.** v(x,y) = 1/|∇t_arrival| (arrival map smoothed over 4 px) shows a network of **slow lanes**: lines about 1 µm wide (the resolution), elongated along the direction of motion, several hundred px long, many of them starting at defects like wakes. They are genuinely slow in the direction of motion, not lateral steps of the wall: the gradient of the arrival time is within 45° of the mean direction of motion in 68 % of the slowest pixels, against 73 % elsewhere.
+- **Lagunas lie on the slow lanes.** The local velocity in laguna pixels is 0.53, 0.72 and 0.85 times that in avalanche pixels for smoothing over 2, 4 and 8 px: the difference is concentrated at the scale of the resolution. The laguna fraction per row has a correlation length of 10 px (1.2 µm) along the wall, i.e. the lanes are narrow.
+- **Per-row persistence** (ε = 0.97 px, τ\* = 7 frames): m_i = 0.57 ± 0.05. It is correlated with the mean velocity of the row (r = −0.41: slower rows are more persistent) and its correlation length along the wall is 55 px = 6.5 µm, larger than ξ. The largest deviation is the band y ≈ 400–480 px behind the ring of defects, where the row velocity drops to 0.19 px/frame (mean 0.28) and m_i rises to 0.7. This large-scale heterogeneity is what `--row-mean` removes.
+- **Lagunas are less persistent, not more.** Rows with more lagunas are slightly slower (r = −0.30) but less persistent (r = −0.20, rows without defects). Where the wall advances by fine creep, ≲ 1 px per frame, it accumulates more than ε within τ\*; where it advances by avalanches it stays still between jumps. The hypothesis of pinned lanes is not supported: the lanes are slow but steady.
+
+**Picture.** The wall advances in two ways that coexist along its length: intermittent avalanches (jumps of ~2 px over segments of ~2 µm, with waiting in between) and slow, steady creep in steps below the resolution along narrow lanes, many of which trail from defects. The persistence and χ4 analysis is dominated by the first; the lagunas and the slow lanes are the second.
+
 ## Next steps
 
 - Map the per-row mean persistence m_i (and mean velocity per row) against the defect positions: the static heterogeneity removed by the row-mean subtraction is itself a measure of the pinning landscape.
