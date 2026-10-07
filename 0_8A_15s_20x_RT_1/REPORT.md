@@ -78,7 +78,6 @@ So the fit-range ambiguity of ξ(τ\*) (±2 px before) disappears. At long lags 
 
 - **Resolution.** ξ(τ\*) ≈ 1.6 µm is close to the optical resolution of the 20x objective (~1 µm, NA 0.4, thesis) and spans ~14 px; ξ is resolved, but its smallest values (ξ ≈ 0.5–0.9 µm at τ = 1, depending on ε) are at the resolution limit.
 - **ξ is measured along y**, not along the wall; the 1/cos θ correction (≈ 2 %) is not applied.
-- `fig_eps_sweep_*.png`, panel 3, shows ξ and χ4 at τ = 1 frame, which is meaningful for Study 1 (τ\* ≤ 1 frame) but not here, where τ\* = 5–24 frames; the table above gives the values at τ\*.
 
 ## Avalanches
 
@@ -164,5 +163,4 @@ python step5_pinning_map.py 0_8A_15s_20x_RT_1          # eps = 0.97 px, tau = ta
 ## Next steps
 
 - Map the per-row mean persistence m_i (and mean velocity per row) against the defect positions: the static heterogeneity removed by the row-mean subtraction is itself a measure of the pinning landscape.
-- Adapt step 3 to show ξ(τ\*) and ξ_max against ε instead of the τ = 1 values.
 - Avalanches: separate the coalescence effect, e.g. by following how S_cut(τ_m) and ℓ_y(τ_m) grow, and relate ℓ_y(τ_m) to ξ(τ) from the persistence analysis.

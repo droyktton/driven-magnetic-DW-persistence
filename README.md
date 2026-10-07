@@ -115,7 +115,7 @@ The tag is `sub_` for subpixel h and empty for integer h. The script also prints
 
 ### `step3_eps_sweep.py`: sensitivity to ε
 
-Reads every `MOVIE/persistence_sub_eps*.npz` file, or the integer-h files with `--int`. It overlays ξ(τ) and χ4(τ) for each ε and plots ξ(τ=1) and χ4(τ=1) against ε. σ_Δh and µm/px are read from the `.npz` files. Output: `MOVIE/fig_eps_sweep_sub.png`, or `fig_eps_sweep_int.png` with `--int`.
+Reads every `MOVIE/persistence_sub_eps*.npz` file (the integer-h files with `--int`, the row-mean ones with `--row-mean`). It overlays ξ(τ) and χ4(τ) for each ε, with τ\* (the maximum of χ4) marked, and plots against ε: ξ(τ\*), ξ_max and ξ(τ=1), with χ4(τ\*) on a second axis; and the time scales τ\*, the lag of ξ_max and the lag at which Π = ½. It also prints these values as a table. σ_Δh, fps and µm/px are read from the `.npz` files. Output: `MOVIE/fig_eps_sweep_sub.png` (`_int`, `_sub_rm`, `_rm` for the other variants).
 
 ### `step4_avalanches.py`: avalanche statistics (TIFF studies)
 
@@ -139,4 +139,4 @@ Local wall velocity v(x,y) = 1/|∇t_arrival| from the arrival-time map smoothed
 | `fig_h_mean.png` | Left: mean wall position H − ⟨h⟩_x against frame, to check that the advance is monotonic with no jumps. Right: mean velocity −Δ⟨h⟩ in px/frame. Dropped frames, if any, are shaded in grey. |
 | `fig_Cn_tau_<tag>eps<ε>.png` | Left: C(n,τ) against distance n for the first τ values with a valid fit. Dots are data and lines are the fit A·e^(−n/ξ)+B. Right: (C−B)/A on a semilog scale, where an exponential decay appears as a straight line of slope −1/ξ. |
 | `fig_xi_chi4_<tag>eps<ε>.png` | Top row linear, bottom row log-log. Columns: (1) ξ(τ) with fit error bars, in px on the left axis and µm on the right; (2) χ4(τ) computed directly, from the C(n) sum and from the model sum, with τ\* marked in red; (3) Π(τ); (4) normalized χ4/[Π(1−Π)] (dots), its local part (χ4 − B·L)/[Π(1−Π)] (squares) and 2ξ (dashed) for comparison. |
-| `fig_eps_sweep_sub.png` | (1) ξ(τ) for each ε, with a µm axis on the right; (2) χ4(τ) for each ε on a semilog scale; (3) ξ(τ=1) in µm (blue) and χ4(τ=1) (red) against ε. The grey band extends to ε = 3σ_Δh. |
+| `fig_eps_sweep_sub.png` | (1) ξ(τ) for each ε on a log τ axis, with a µm axis on the right; (2) χ4(τ) for each ε; stars mark τ\* in both; (3) ξ(τ\*), ξ_max and ξ(τ=1) against ε, with χ4(τ\*) in red on the right axis; (4) τ\*, the lag of ξ_max and the lag at which Π = ½ against ε. The grey band extends to ε = 3σ_Δh. |
