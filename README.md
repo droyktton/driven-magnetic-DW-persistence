@@ -29,6 +29,7 @@ python step2_persistence.py MOVIE --int                          # integer h, ε
 python step3_eps_sweep.py MOVIE                                  # sensitivity to ε
 python step4_avalanches.py MOVIE --tau-m 1 3 10                  # avalanches (TIFF studies)
 python step5_pinning_map.py MOVIE                                # pinning map (TIFF studies)
+python step7_roughness.py MOVIE --rmin 25                        # roughness on the base plane (TIFF)
 ```
 
 Step 1 writes the frame rate and the spatial scale to `MOVIE/meta.json`, and steps 2 and 3 read them from there. By default, the frame rate is the one stored in the video (for TIFF: from the timestamps in Micro-Manager's `metadata.txt`) and the scale is 0.17 µm/px. You can override either with `--fps` or `--um-per-px` in any step. `--um-per-px 0` reports everything in pixels only.
@@ -51,6 +52,14 @@ If x is taken along an image axis that is not the base plane, the geometry is mi
 - **TIFF input:** the vertical axis of the image (rows y), with h along the image x axis. Step 1 fits the actual base line in every frame, x = a + y·tan θ(t), and reports θ(t) in `tiff_extra.npz` (`theta_deg`) and `fig_tilt_overhang.png`.
 
 So, for a wall tilted by θ, ξ measured along the image axis has to be multiplied by 1/cos θ to be a length along the wall, and ε corresponds to a normal threshold ε·cos θ. In Study 2, θ = −10° to −14°, so the corrections are 1.5–3 % and are not applied. For a strongly tilted or curved wall, the frames should be rotated onto the base plane (or h measured normal to it) before step 2; this is not implemented.
+
+**Effect of the tilt on what the pipeline computes.** In Study 2 the wall is tilted on average by θ ≈ −12° (−14° to −8.5° over the run), and h(y,t) contains that slope (~200 px between the top and the bottom of the field). This is harmless for the persistence analysis:
+
+- the persistence compares h in the *same* row at t and t+τ, so a fixed tilt cancels exactly in Δh. The tilt changes by ~3° in 10 h, which moves the ends of the wall by ~0.01 px within τ\* = 7 frames and ~0.1 px within τ ≈ 90 frames, against ε ≈ 1 px;
+- C(n,τ) and χ4 are computed on the binary field p_i, not on h, so the slope of h does not enter;
+- what remains are the geometric factors above (1/cos θ for lengths along the wall, cos θ for the normal threshold), 1.5–3 % here.
+
+The tilt does matter for the **roughness** of the wall (the correlation function or structure factor of h itself): there the slope would dominate and give a spurious roughness exponent ζ ≈ 1. `step7_roughness.py` therefore rotates the wall onto its base plane and subtracts the residual slope of each frame before measuring the roughness.
 
 ## Input requirements
 
@@ -159,6 +168,10 @@ Local wall velocity v(x,y) = 1/|∇t_arrival| from the arrival-time map smoothed
 `python step6_pinning_tests.py DIR [--eps 0.97] [--tau T] [--nsurr 200]`. (1) Overlays ξ(τ), χ4(τ) and χ4/[Π(1−Π)] for the whole wall and for the step2 `--mask-defects` (far) and `--near-defects` (near) results, and tabulates τ\*, ξ(τ\*) and ξ_max (`fig_mask_defects_eps<ε>.png`). (2) Tests whether persistent clusters longer than 2ξ(τ\*) sit closer to the defects than clusters moved at random along the wall (surrogate), with a planted-cluster control. (3) Fits ξ(τ) with power, log and saturating laws (AIC). (4) Measures how concentrated the waiting map 1/v is and its correlation lengths along and across the wall (`fig_pinning_tests.png`).
 
 Simulated walls can be analysed with step2/step3 by writing `DIR/h_xt_sub.npy` (frames × columns, h decreasing as the wall advances) and a `DIR/meta.json` with at least `fps` and `um_per_px` (0 for none).
+
+### `step7_roughness.py`: roughness and structure factor
+
+`python step7_roughness.py DIR [--every 5] [--rmin 16] [--mask-d 20]` (TIFF studies), `--from-h` for video studies or simulations (uses `h_xt_sub.npy`, no rotation), `--selftest` for a synthetic check. The wall is put on its **base plane**: the domain of every N-th frame is rotated by the mean tilt θ0 (as a continuous image, linear interpolation, threshold 0.5) and the residual slope of each frame is removed. Along each row of the rotated frame it measures three heights: **u_area** (area-conserving column height, single-valued, the reference), **u_front** (last crossing) and **u_back** (first crossing); where they differ there is an overhang, and the exponent is trusted only in the range of scales where their S(q) agree. Outputs: S(q) (Hann window, averaged over frames and over thirds of the run), B(r) = ⟨[u(s+r)−u(s)]²⟩ with its local slope ζ_eff(r), the local width w(ℓ), B(r) without pairs near defects, ζ from each (fit range `--rmin` < ℓ < L/4; S(q) log-binned, error by block bootstrap over time), overhang statistics, `roughness.npz` and `fig_roughness.png`. The self-test shows that S(q) is unbiased while B(r) and w(ℓ) underestimate large ζ; use S(q) as the reference.
 
 ## Figures
 

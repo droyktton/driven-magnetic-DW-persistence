@@ -23,6 +23,10 @@ python step3_eps_sweep.py magnetic_fliped
 - **Shape of ξ(τ):** a plateau from τ = 1 to 2–3 frames, followed by a decay to ~5 px at τ ≈ 7–8.
 - **Normalized χ4** (ε = 0.75 px): χ4/[Π(1−Π)] ≈ 45–48 px for τ = 1–3, then decays. It has the same shape as ξ(τ). So the monotonic decay of the raw χ4 comes mostly from Π → 0, not from a loss of cooperativity at short τ. The plateau term B·L accounts for about a third of χ4 at τ = 1.
 
+## Roughness
+
+`python step7_roughness.py magnetic_fliped --from-h --every 1 --rmin 16` (`fig_roughness.png`): S(q) of the subpixel h, with a straight line removed from each frame (residual tilt ≤ 4.6°; the wall is close to horizontal, so no rotation is applied). rms width of the detrended wall 2.4 µm. Fitting 2.7–33 µm: **ζ = 1.10 ± 0.04** from S(q) (thirds of the movie: 1.00, 1.21, 1.02; w(ℓ) gives 1.04, B(r) 0.65, which underestimates ζ ≈ 1 according to the self-test of step7). This is much rougher than the slow wall of Study 2 (ζ ≈ 0.75) and closer to the depinning value ζ_dep ≈ 1.25, consistent with a wall driven faster, nearer to depinning; but the two studies differ in sample region, field, frame rate and magnification, so the comparison is only indicative.
+
 ## Discussion and outlook
 
 ### Measuring τ\* needs better time resolution

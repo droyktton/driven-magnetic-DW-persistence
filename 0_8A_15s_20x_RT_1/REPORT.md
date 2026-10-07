@@ -194,6 +194,30 @@ python step6_pinning_tests.py 0_8A_15s_20x_RT_1 --eps 0.97
 
 **Conclusion.** The visible strong defects do not produce the χ4 peak or the correlation length: both are unchanged, or ξ_max even larger, far from them, and persistent clusters are not attached to them. The slow regions are extended at the scale of ξ and ξ(τ) grows without saturation, as expected for collective creep. These tests cannot exclude pinning centres that are strong but dense and invisible (below the resolution), with spacing ≲ ξ; such a landscape is, in practice, the collective-pinning picture. The decisive remaining tests are (a) the field dependence of ξ and τ\* (collective creep: ξ grows as H decreases; pin-dominated: fixed), which needs the measurements at 20.7–24.2 Oe, and (b) the same analysis on simulations of an elastic line with weak disorder, with and without added sparse strong pins: step2–step6 run on any `h_xt_sub.npy` + `meta.json`.
 
+## Roughness and structure factor
+
+`step7_roughness.py` (`fig_roughness.png`, `roughness.npz`):
+
+```bash
+python step7_roughness.py 0_8A_15s_20x_RT_1 --every 5 --rmin 25
+```
+
+**Base plane.** The wall is tilted by θ0 = −11.8° on average, which would dominate any roughness measurement. Every 5th frame (360 frames), the domain is rotated by θ0 as a continuous image (linear interpolation, threshold 0.5) and the residual slope of each frame (≤ 3.9°) is removed with a line fit. On the base plane, 915 rows (108 µm) are inside the field in every frame. The rms width of the detrended wall is 5.5 µm.
+
+**Overhangs.** On the base plane they are 4.7 % of the (row, frame) pairs, narrow along the wall (median 4 px, 90 % below 28 px) but deep (front − back: median 63 px, 90 % below 164 px): mostly tongues around the defects. Three heights are measured in every row: u_area (area-conserving column height, the reference), u_front and u_back. Their S(q) agree for q ≲ 1–2 µm⁻¹ and separate at larger q, where the jumps of u_front and u_back at the overhangs add a q⁻² tail. The fits therefore use ℓ = 2π/q from 2.9 to 27 µm (25–229 px), above both the optical resolution (~1 µm) and most of the overhang effect.
+
+**Validation** (`--selftest`): synthetic walls with known ζ, tilted by 12°, rotated and analysed in the same way, give the same exponents as without tilt; S(q) recovers ζ without bias (0.48, 0.68 and 1.01 for 0.5, 0.66 and 1.0), whereas B(r) underestimates ζ ≥ 0.66 (0.58 and 0.78) and w(ℓ) underestimates ζ ≈ 1. S(q) is the reference estimator; its error is a block bootstrap over time (frames are strongly correlated).
+
+| estimator | ζ from S(q), 2.9–27 µm | thirds of the run | ζ from B(r) | ζ from w(ℓ) |
+|---|---|---|---|---|
+| u_area | 0.82 ± 0.09 | 0.74, 0.53, 1.01 | 0.54 (far from defects 0.61) | 0.84 |
+| u_front | 0.76 ± 0.05 | 0.75, 0.55, 0.85 | 0.52 | 0.72 |
+| u_back | 0.69 ± 0.04 | 0.74, 0.53, 0.70 | 0.50 | 0.64 |
+
+- **ζ ≈ 0.75 ± 0.1.** The three heights bracket ζ_S between 0.69 and 0.82; with fit ranges from 1.9 or 5.9 µm the values stay within 0.68–0.84. B(r) gives 0.50–0.61, which by the self-test calibration corresponds to a true ζ ≈ 0.6–0.7. The roughness is compatible with the equilibrium exponent ζ_eq = 2/3 expected for creep at short scales, and clearly below the depinning value ζ_dep ≈ 1.25.
+- **The exponent fluctuates in time** (0.53–1.01 between thirds of the run): the large scales of a single wall evolve slowly, so each third contains few independent configurations. The global value has a correspondingly large error.
+- **Scale dependence.** ζ_eff(r) = ½ d ln B/d ln r decreases from ~0.9 at r ≈ 0.1–1 µm (below the resolution, not physical) to ~0.6 at 5–10 µm and then saturates. No clear crossover appears near ξ(τ\*) or ξ_max (1.6–2.6 µm), which are too close to the resolution to separate regimes.
+
 ## Next steps
 
 - Map the per-row mean persistence m_i (and mean velocity per row) against the defect positions: the static heterogeneity removed by the row-mean subtraction is itself a measure of the pinning landscape.
