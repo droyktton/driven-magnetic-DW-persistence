@@ -53,6 +53,17 @@ C(n,τ) is computed with the mean persistence of each row subtracted (`step2 --r
 
 τ in frames (1 frame = 20 s). Errors are statistical (fit). Figures: `fig_xi_chi4_sub_rm_eps<ε>.png`, `fig_Cn_tau_sub_rm_eps<ε>.png`, `fig_eps_sweep_sub_rm.png`; the same without row-mean subtraction: `*_sub_eps<ε>*`, `fig_eps_sweep_sub.png`.
 
+### ξ(τ\*) and ξ_max: two points of the same curve
+
+The table gives two correlation lengths, both read from the curve ξ(τ):
+
+- **ξ(τ\*)** is ξ at τ\*, the lag of the **maximum of χ4**. Since χ4 ≈ (number of correlated sites) × (variance of one site), and that variance Π(1−Π) is largest at Π = ½, τ\* falls where half of the wall has moved by more than ε. It therefore **depends on ε** (τ\* = 2 min for ε = 0.5 px, 8 min for ε = 5 px). Here ξ(τ\*) ≈ 1.6 µm at ε = 0.97 px (1.5–2.1 µm over ε). It is the standard quantity of the dynamic-heterogeneity literature ("the correlation length at the peak of χ4").
+- **ξ_max** is the **maximum of ξ(τ) itself**, regardless of χ4. ξ keeps growing well after τ\*, up to τ ≈ 80–115 frames (~30 min), and only then decreases. Here ξ_max ≈ 2.6 µm, almost independent of ε (2.5–2.8 µm).
+
+**Why they differ.** χ4 peaks earlier than ξ because after τ\* its amplitude Π(1−Π) falls quickly: most of the wall has moved and few persistent sites remain. But those that remain are correlated over longer and longer segments, and ξ measures the size of those segments, not how many there are. Thus ξ(τ\*) answers "at the moment of maximal heterogeneity, how large are the regions that move together?" (it mixes size and number of regions and depends on ε), while ξ_max answers "how large do the correlated regions become, and how long does it take?" (the most ε-robust cooperativity scale, but measured when Π is already small, ~5–10 %, with less statistics).
+
+**In practice:** report ξ(τ\*) to compare with work based on the χ4 peak, and ξ_max as a characteristic scale independent of the threshold. In the strong-pinning tests (below) both behave the same: neither changes far from the defects.
+
 ### Main findings
 
 1. **τ\* is resolved.** Unlike Study 1, χ4(τ) rises, peaks and decays. At ε = 3σ_Δh = 0.97 px, **τ\* = 7 frames ≈ 2.3 min**, with **ξ(τ\*) = 13.4 ± 0.1 (stat.) ± 0.3 (fit) px = 1.58 ± 0.04 µm**. Over ε = 0.5–5 px, ξ(τ\*) = 1.5–2.1 µm.
