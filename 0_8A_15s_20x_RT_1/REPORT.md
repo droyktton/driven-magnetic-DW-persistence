@@ -132,6 +132,20 @@ The thesis list `Data/Histogramas_lineal/Avalanchas_15s.txt` has 1151 avalanches
 - As a result, the thesis 1-frame distribution resembles ours at τ_m = 60 s (both S_cut ≈ 1.2 µm²; `fig_avalanches_thesis_roi.png`).
 - **Time base.** The thesis labels its windows 15, 30, 45, 60 s (`Data/Exponente/exponentes_0_8A.txt`), i.e. 1–4 frames at 15 s per frame, while the acquisition interval was 20 s (see *Data*). Times in the thesis for this measurement are probably too short by a factor 3/4.
 
+### Comparison with the thesis at 24.2 Oe (~52 °C)
+
+The thesis also analysed 0_42A_20s_20x_52C_1 (24.2 Oe, ~52 °C); only its processed results are available (`Data/S_medio`, `Data/Histogramas_log`), not the frames. `compare_thesis_fields.py` puts them next to ours (`fig_thesis_fields.png`):
+
+```bash
+python 0_8A_15s_20x_RT_1/compare_thesis_fields.py /media/…/ResumenMaestría_Mati/Data
+```
+
+1. **Calibration on this measurement (thesis ROI).** Both methods count almost the same avalanches at every window (1151 vs 1324 at 1 frame, 476 vs 513 at 8, 149 vs 169 at 20), but the thesis mean area is larger by an amount that grows with the event size: +0.8 µm² at 1 frame (1.49 vs 0.68 µm²), +2.2 at 8 frames, +3.9 at 20 frames. This is what a halo of roughly constant width around each event does, as expected from filtering the difference image; for large windows (≳ 40 frames) the two agree.
+2. **24.2 Oe vs 46.1 Oe, same (thesis) method.** At 24.2 Oe the mean area is smaller and grows more slowly with the window: the ratio to 46.1 Oe is 0.77 at 1 frame, 0.64 at 4, 0.58 at 8 and 0.44 at 16 frames. Fewer events coalesce per window, consistent with a smaller advance per frame at the lower field (the velocity of that measurement is not in the available data).
+3. **Same shape.** Rescaled by their mean area, the two thesis distributions at 1 frame collapse onto each other: field and temperature change the scale, not the shape. Ours (46.1 Oe) has more weight at small S/S̄, consistent with the halo, which enlarges small events proportionally more.
+
+Without the frames of the 24.2 Oe measurement, these conclusions rest on the thesis method; the halo correction obtained at 46.1 Oe cannot be transferred reliably because it depends on the event shapes. Running this pipeline on the raw frames of the other measurements (0_36A, 0_38A, 0_42A) is pending.
+
 ## Next steps
 
 - Map the per-row mean persistence m_i (and mean velocity per row) against the defect positions: the static heterogeneity removed by the row-mean subtraction is itself a measure of the pinning landscape.
