@@ -3,8 +3,8 @@
 Usage: python step7_roughness.py DIR [--every 5] [--rmin 16] [--mask-d 20]
        python step7_roughness.py DIR --from-h [--every 1]       (video studies, simulations)
        python step7_roughness.py --selftest                     (synthetic wall with known zeta)
-Outputs in DIR: roughness.npz, fig_roughness.png, height_distribution.npz,
-fig_height_distribution.png and a summary on stdout.
+Outputs in DIR: roughness.npz, fig_roughness.png, local_width.npz, fig_local_width.png,
+height_distribution.npz, fig_height_distribution.png and a summary on stdout.
 
 TIFF studies. The wall is tilted in the image (Study 2: ~ -12 deg), and h(y,t) contains that slope,
 which would dominate any roughness measurement. Here every frame is put on the base plane:
@@ -32,6 +32,13 @@ scale where the three heights start to differ because of overhangs. Self-test (s
 --selftest): S(q) is unbiased, B(r) underestimates zeta >= 0.66 (0.58 for 0.66, 0.78 for 1) and
 w(l) underestimates zeta ~ 1; S(q) is the reference estimator. Overhangs only distort scales up to their size: where u_area,
 u_front and u_back give the same S(q), the exponent is not affected by them.
+Local width with local rotation: the wall of each frame is cut into segments of projected length l
+along the base plane (windows sliding by l/2); each segment is rotated by its own tilt, i.e.
+w2 = smallest eigenvalue of the covariance of its points (orthogonal least-squares line), and
+<w2(l)> is averaged over all segments and frames (~ l^(2 zeta)). For TIFF studies the points are
+the full subpixel contour of the wall, resampled at uniform arc length, so overhangs are part of the
+shape and need no choice of height; control: the same on u_area. Also the spread of the local
+tilt of the segments vs l. Error: block bootstrap over frames.
 Height distribution: P(du/sigma) of the deviations du(s,t) = u(s,t) - <u>_s(t) from the base plane of
 each frame (rotation by theta0 + per-frame line = rotation by theta(t)), normalised by the width
 sigma(t) of each frame, with skewness and excess kurtosis (block-bootstrap errors). Also shown:
@@ -57,6 +64,9 @@ ap.add_argument("--rmin", type=float, default=16, help="smallest scale used in t
 ap.add_argument("--rmax-frac", type=float, default=0.25, help="largest scale in the fits, as a fraction of L")
 ap.add_argument("--mask-d", type=float, default=20, help="exclusion distance to defects for B(r), px")
 ap.add_argument("--from-h", action="store_true", help="use h_xt_sub.npy (no rotation, no overhangs)")
+ap.add_argument("--max-tilt", type=float, default=45,
+                help="local width: also report the result without segments whose own tilt differs from the "
+                     "base plane by more than this (deg); they are folds/tongues of the wall")
 ap.add_argument("--selftest", action="store_true", help="synthetic tilted wall with known zeta")
 args = ap.parse_args()
 
@@ -195,6 +205,53 @@ def heights_rotated(dom_area, dom_front, ang, valid):
     return ua, uf, ub, gaps
 
 
+# ------------------------------------------------------------------ local width with local rotation (PCA)
+def contour_points(domf, step=0.5, border=2):
+    """Subpixel wall contour of a filled domain, resampled at uniform arc length; (y, x) arrays."""
+    from skimage.measure import find_contours
+    cs = find_contours(domf.astype(float), 0.5)
+    if not cs:
+        return np.empty(0), np.empty(0)
+    c = max(cs, key=len)
+    seg = np.hypot(*np.diff(c, axis=0).T)
+    arc = np.concatenate([[0], np.cumsum(seg)])
+    a = np.arange(0, arc[-1], step)
+    y, x = np.interp(a, arc, c[:, 0]), np.interp(a, arc, c[:, 1])
+    H, W = domf.shape
+    keep = (y > border) & (y < H - 1 - border) & (x > border) & (x < W - 1 - border)
+    return y[keep], x[keep]
+
+
+def pca_width(y, x, theta0_deg, ells, step=0.5):
+    """For windows of projected length l along the base direction (tilt theta0), w2 = smallest
+    eigenvalue of the covariance of the contour points (= variance normal to the segment's own
+    best line, i.e. after rotating the segment by its local tilt). Returns per-l lists of w2 and
+    local tilt (deg, relative to theta0)."""
+    t0 = np.radians(theta0_deg)
+    s = y * np.cos(t0) + x * np.sin(t0)
+    o = np.argsort(s)
+    s, y, x = s[o], y[o], x[o]
+    C = [np.concatenate([[0], np.cumsum(v)]) for v in (np.ones_like(y), y, x, y * y, x * x, x * y)]
+    out_w2, out_tilt = [], []
+    for l in ells:
+        s0 = np.arange(s[0], s[-1] - l, l / 2)
+        a = np.searchsorted(s, s0)
+        b = np.searchsorted(s, s0 + l)
+        n = b - a
+        ok = n >= max(4, 0.5 * l / step)
+        a, b, n = a[ok], b[ok], n[ok].astype(float)
+        if n.size == 0:
+            out_w2.append(np.empty(0)); out_tilt.append(np.empty(0)); continue
+        my, mx = (C[1][b] - C[1][a]) / n, (C[2][b] - C[2][a]) / n
+        syy = (C[3][b] - C[3][a]) / n - my ** 2
+        sxx = (C[4][b] - C[4][a]) / n - mx ** 2
+        sxy = (C[5][b] - C[5][a]) / n - mx * my
+        lam = (syy + sxx) / 2 - np.sqrt(((syy - sxx) / 2) ** 2 + sxy ** 2)
+        alpha = 0.5 * np.arctan2(2 * sxy, syy - sxx)          # major axis, from y towards x
+        out_w2.append(np.clip(lam, 0, None)); out_tilt.append(np.degrees(alpha - t0))
+    return out_w2, out_tilt
+
+
 # ------------------------------------------------------------------ self test
 if args.selftest:
     rng = np.random.default_rng(0)
@@ -220,6 +277,18 @@ if args.selftest:
         print(f"selftest zeta = {zeta}: rotated wall (tilt {theta}°)  S(q) {rot[:, 0].mean():.2f}±{rot[:, 0].std():.2f}  "
               f"B(r) {rot[:, 1].mean():.2f}±{rot[:, 1].std():.2f}  w(l) {rot[:, 2].mean():.2f}±{rot[:, 2].std():.2f}"
               f"   | unrotated input: {ref[:, 0].mean():.2f} {ref[:, 1].mean():.2f} {ref[:, 2].mean():.2f}")
+        zp = []
+        ells_t = np.unique(np.round(np.logspace(np.log10(8), np.log10(H / 2), 20)).astype(int))
+        for _ in range(6):
+            k = np.fft.rfftfreq(H)
+            amp = np.zeros_like(k); amp[1:] = k[1:] ** (-(1 + 2 * zeta) / 2)
+            u = np.fft.irfft(amp * np.exp(2j * np.pi * rng.random(k.size)), n=H)
+            u *= 8 / u.std()
+            dom = X < 600 + (Y - H / 2) * np.tan(np.radians(theta)) + u[:, None]
+            yy_, xx_ = contour_points(dom)
+            w2l, _ = pca_width(yy_, xx_, theta, ells_t)
+            zp.append(fit_power(ells_t.astype(float), np.array([v.mean() for v in w2l]), args.rmin, H * args.rmax_frac)[0] / 2)
+        print(f"   local width with local rotation (PCA on the contour): zeta {np.mean(zp):.2f}±{np.std(zp):.2f}")
     raise SystemExit
 
 # ------------------------------------------------------------------ data
@@ -246,14 +315,16 @@ else:
     dist_rot = rotate(distance_transform_edt(~defects), ang, reshape=True, order=1, cval=0)
     T = len(theta)
     frames = np.arange(0, T, args.every)
-    ua_all, uf_all, ub_all, gp_all = [], [], [], []
+    ua_all, uf_all, ub_all, gp_all, contours = [], [], [], [], []
     edge = lambda lab_: np.setdiff1d(np.unique(lab_[:, 0]), [0])
     for i, kf in enumerate(frames):
         dom = ta <= kf
         lab_, _ = label(dom)
         dom = np.isin(lab_, edge(lab_))
-        ua, uf, ub, gp = heights_rotated(dom, binary_fill_holes(dom), ang, valid)
+        domf = binary_fill_holes(dom)
+        ua, uf, ub, gp = heights_rotated(dom, domf, ang, valid)
         ua_all.append(ua); uf_all.append(uf); ub_all.append(ub); gp_all.append(gp)
+        contours.append(contour_points(domf))
         if i % 60 == 0:
             print(f"  frame {kf}/{T}")
     ua_all, uf_all, ub_all, gp_all = map(np.array, (ua_all, uf_all, ub_all, gp_all))
@@ -314,6 +385,97 @@ np.savez(os.path.join(args.dir, "roughness.npz"), theta0=theta0, frames=frames, 
          rmin=args.rmin, rmax=rmax, um_per_px=k_um,
          **{f"{n}_{k}": v for n, r_ in res.items() for k, v in r_.items()
             if k in ("q", "S", "r", "B", "Bm", "l", "W2", "zS", "dzS", "zB", "zBm", "zW", "zS_thirds") and v is not None})
+
+# ------------------------------------------------------------------ local width, local rotation
+ells = np.unique(np.round(np.logspace(np.log10(4), np.log10(L), 28)).astype(int)).astype(float)
+if args.from_h:
+    pts = [(np.arange(L, dtype=float), row) for row in U["h"]]
+    th_pts = 0.0
+else:
+    pts = contours
+    th_pts = theta0
+per_frame = [pca_width(yy_, xx_, th_pts, ells) for yy_, xx_ in pts]     # [(w2 lists, tilt lists)]
+W2f = np.array([[v.mean() if v.size else np.nan for v in pf[0]] for pf in per_frame])   # frames x ells
+NW = np.array([[v.size for v in pf[0]] for pf in per_frame])
+# same, without the segments tilted by more than --max-tilt from the base plane (folds, tongues)
+keepT = [[np.abs(t_) <= args.max_tilt for t_ in pf[1]] for pf in per_frame]
+W2r = np.array([[v[k_].mean() if k_.any() else np.nan for v, k_ in zip(pf[0], kp)] for pf, kp in zip(per_frame, keepT)])
+NR = np.array([[k_.sum() for k_ in kp] for kp in keepT])
+w2_restr = np.nansum(np.nan_to_num(W2r) * NR, 0) / np.maximum(NR.sum(0), 1)
+frac_excl = 1 - NR.sum(0) / np.maximum(NW.sum(0), 1)
+w2_pca = np.nansum(W2f * NW, 0) / np.maximum(NW.sum(0), 1)
+tilt_sd = np.array([np.std(np.concatenate([pf[1][j] for pf in per_frame])) if NW[:, j].sum() else np.nan
+                    for j in range(len(ells))])
+blocks = np.array_split(np.arange(W2f.shape[0]), 12)
+rng_w = np.random.default_rng(3)
+boot = []
+for _ in range(300):
+    pick = np.concatenate([blocks[j] for j in rng_w.integers(0, 12, 12)])
+    boot.append(np.nansum(W2f[pick] * NW[pick], 0) / np.maximum(NW[pick].sum(0), 1))
+boot = np.array(boot)
+dw2 = boot.std(0)
+zfit = lambda w2: fit_power(ells, w2, args.rmin, rmax)[0] / 2
+z_pca = zfit(w2_pca)
+dz_pca = np.std([zfit(b_) for b_ in boot])
+ref_name = "area" if "area" in U else "h"
+# control: same PCA on the single-valued height of the base plane (rows s, height u)
+ctrl = [pca_width(np.arange(L, dtype=float), row, 0.0, ells) for row in U[ref_name]]
+w2_ctrl = np.array([np.mean(np.concatenate([c[0][j] for c in ctrl])) if any(c[0][j].size for c in ctrl) else np.nan
+                    for j in range(len(ells))])
+z_ctrl = zfit(w2_ctrl)
+z_shear = res[ref_name]["zW"]
+z_restr = zfit(w2_restr)
+print(f"local width w2(l), each segment rotated by its own tilt (PCA), {'contour' if not args.from_h else 'h'}: "
+      f"zeta = {z_pca:.3f} ± {dz_pca:.3f}; same on u_{ref_name}: {z_ctrl:.3f}; "
+      f"line removed without rotation (w(l) above): {z_shear:.3f}")
+print(f"   without segments tilted > {args.max_tilt:g} deg from the base plane: zeta = {z_restr:.3f} "
+      f"(segments excluded: {frac_excl[(ells >= args.rmin) & (ells <= rmax)].mean():.0%} in the fit range)")
+for j in np.unique(np.searchsorted(ells, [8, 25, 85, 250, 850])).clip(0, len(ells) - 1):
+    print(f"   l = {ells[j]:5.0f} px ({ells[j] * kk:6.1f} {unit}): w = {np.sqrt(w2_pca[j]) * kk:6.3f} {unit}, "
+          f"local tilt sd {tilt_sd[j]:5.1f} deg, {int(NW[:, j].sum())} segments, "
+          f"{frac_excl[j]:.0%} tilted > {args.max_tilt:g} deg")
+np.savez(os.path.join(args.dir, "local_width.npz"), ells=ells, w2_pca=w2_pca, dw2=dw2, w2_ctrl=w2_ctrl,
+         w2_restricted=w2_restr, frac_excluded=frac_excl, max_tilt=args.max_tilt, zeta_restricted=z_restr,
+         tilt_sd=tilt_sd, n_segments=NW.sum(0), zeta_pca=z_pca, dzeta_pca=dz_pca, zeta_ctrl=z_ctrl,
+         theta0=th_pts, every=args.every, rmin=args.rmin, rmax=rmax, um_per_px=k_um)
+
+fig, ax = plt.subplots(1, 3, figsize=(18, 5))
+yy_, xx_ = pts[len(pts) // 2]
+lshow = ells[np.argmin(np.abs(ells * kk - (20 if k_um else 160)))]
+t0r = np.radians(th_pts)
+sx = yy_ * np.cos(t0r) + xx_ * np.sin(t0r)
+ax[0].plot(xx_, yy_, ".", ms=0.6, color="0.6")
+for j, s0 in enumerate(np.arange(sx.min(), sx.max() - lshow, lshow)):
+    m = (sx >= s0) & (sx < s0 + lshow)
+    if m.sum() < 4:
+        continue
+    py, px = yy_[m], xx_[m]
+    cy, cx = py.mean(), px.mean()
+    cov = np.cov(np.vstack([py, px]))
+    ev, evec = np.linalg.eigh(cov)
+    d = evec[:, 1]
+    tt = np.array([-lshow / 2, lshow / 2]) / max(abs(d[0] * np.cos(t0r) + d[1] * np.sin(t0r)), 0.2)
+    c = plt.cm.tab10(j % 10)
+    ax[0].plot(px, py, ".", ms=1.2, color=c)
+    ax[0].plot(cx + tt * d[1], cy + tt * d[0], "-", color="k", lw=1)
+ax[0].invert_yaxis(); ax[0].set_aspect("equal")
+ax[0].set_title(f"Segments of {lshow * kk:.0f} {unit} and their own best lines (frame {frames[len(pts) // 2]})", fontsize=10)
+ax[0].set_xlabel("x [px]" if not args.from_h else "h [px]"); ax[0].set_ylabel("y [px]" if not args.from_h else "column")
+ax[1].loglog(ells * kk, w2_pca * kk ** 2, "o-", ms=3, color="C0", label=f"local rotation, {'contour' if not args.from_h else 'h'}: ζ = {z_pca:.2f} ± {dz_pca:.2f}")
+ax[1].fill_between(ells * kk, (w2_pca - 2 * dw2) * kk ** 2, (w2_pca + 2 * dw2) * kk ** 2, color="C0", alpha=0.2)
+ax[1].loglog(ells * kk, w2_restr * kk ** 2, "D-", ms=3, mfc="none", color="C4",
+             label=f"local rotation, segments tilted ≤ {args.max_tilt:g}°: ζ = {z_restr:.2f}")
+ax[1].loglog(ells * kk, w2_ctrl * kk ** 2, "s--", ms=3, mfc="none", color="C1", label=f"local rotation, u_{ref_name}: ζ = {z_ctrl:.2f}")
+ax[1].loglog(res[ref_name]["l"] * kk, res[ref_name]["W2"] * kk ** 2, "^:", ms=3, color="C2", label=f"line removed, no rotation: ζ = {z_shear:.2f}")
+ax[1].axvspan(args.rmin * kk, rmax * kk, color="0.92", zorder=0)
+ax[1].set_xlabel(f"segment length ℓ [{unit}]"); ax[1].set_ylabel(f"⟨w²(ℓ)⟩ [{unit}²]"); ax[1].legend(fontsize=8)
+ax[1].set_title(r"Local width, $\langle w^2\rangle \sim \ell^{2\zeta}$ (grey: fit range; band: ±2σ)", fontsize=10)
+ax[2].semilogx(ells * kk, tilt_sd, "o-", ms=3, label="sd of the local tilt")
+ax2b = ax[2].twinx(); ax2b.semilogx(ells * kk, 100 * frac_excl, "s--", ms=3, color="C3", mfc="none")
+ax2b.set_ylabel(f"% of segments tilted > {args.max_tilt:g}°", color="C3")
+ax[2].set_xlabel(f"segment length ℓ [{unit}]"); ax[2].set_ylabel("sd of the local tilt [deg]")
+ax[2].set_title("Spread of the local tilt of the segments", fontsize=10)
+fig.tight_layout(); fig.savefig(os.path.join(args.dir, "fig_local_width.png"), dpi=120); plt.close(fig)
 
 # ------------------------------------------------------------------ height distribution
 def moments(x):

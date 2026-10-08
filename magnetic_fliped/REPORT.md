@@ -27,6 +27,8 @@ python step3_eps_sweep.py magnetic_fliped
 
 `python step7_roughness.py magnetic_fliped --from-h --every 1 --rmin 16` (`fig_roughness.png`): S(q) of the subpixel h, with a straight line removed from each frame (residual tilt ≤ 4.6°; the wall is close to horizontal, so no rotation is applied). rms width of the detrended wall 2.4 µm. Fitting 2.7–33 µm: **ζ = 1.10 ± 0.04** from S(q) (thirds of the movie: 1.00, 1.21, 1.02; w(ℓ) gives 1.04, B(r) 0.65, which underestimates ζ ≈ 1 according to the self-test of step7). This is much rougher than the slow wall of Study 2 (ζ ≈ 0.75) and closer to the depinning value ζ_dep ≈ 1.25, consistent with a wall driven faster, nearer to depinning; but the two studies differ in sample region, field, frame rate and magnification, so the comparison is only indicative.
 
+**Local width with local rotation** (`fig_local_width.png`): segments of length ℓ rotated by their own tilt give ζ = 1.09 ± 0.02 (line removed without rotation: 1.04). The local tilt is much smaller than in Study 2 (sd 17–19° at a few µm, 7° at 50 µm), so the rotation matters less here and all estimators agree on ζ ≈ 1.05–1.10.
+
 **Height distribution** (`fig_height_distribution.png`; h decreases as the wall advances here, so δh > 0 means lagging behind): on the base plane of each frame, skewness +0.29 ± 0.08 and excess kurtosis −0.42 ± 0.14; in windows of 20 µm, skewness +0.14 ± 0.08, excess kurtosis +1.1 ± 0.4; in windows of 5 µm, excess kurtosis +4.1 ± 1.0. As in Study 2, the long tail is on the lagging side. Without removing the per-frame line (mean only), the skewness changes sign (−0.13): the residual tilt (up to 4.6°) dominates it, which is why the base plane is needed.
 
 ## Discussion and outlook

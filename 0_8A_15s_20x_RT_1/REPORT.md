@@ -225,9 +225,27 @@ python step7_roughness.py 0_8A_15s_20x_RT_1 --every 5 --rmin 25
 | u_front | 0.76 ± 0.05 | 0.75, 0.55, 0.85 | 0.52 | 0.72 |
 | u_back | 0.69 ± 0.04 | 0.74, 0.53, 0.70 | 0.50 | 0.64 |
 
-- **ζ ≈ 0.75 ± 0.1.** The three heights bracket ζ_S between 0.69 and 0.82; with fit ranges from 1.9 or 5.9 µm the values stay within 0.68–0.84. B(r) gives 0.50–0.61, which by the self-test calibration corresponds to a true ζ ≈ 0.6–0.7. The roughness is compatible with the equilibrium exponent ζ_eq = 2/3 expected for creep at short scales, and clearly below the depinning value ζ_dep ≈ 1.25.
+- **ζ ≈ 0.75 ± 0.1 over 2.9–27 µm** (but this range mixes two regimes; see *Local width with local rotation* below). The three heights bracket ζ_S between 0.69 and 0.82; with fit ranges from 1.9 or 5.9 µm the values stay within 0.68–0.84. B(r) gives 0.50–0.61, which by the self-test calibration corresponds to a true ζ ≈ 0.6–0.7. The roughness is compatible with the equilibrium exponent ζ_eq = 2/3 expected for creep at short scales, and clearly below the depinning value ζ_dep ≈ 1.25.
 - **The exponent fluctuates in time** (0.53–1.01 between thirds of the run): the large scales of a single wall evolve slowly, so each third contains few independent configurations. The global value has a correspondingly large error.
 - **Scale dependence.** ζ_eff(r) = ½ d ln B/d ln r decreases from ~0.9 at r ≈ 0.1–1 µm (below the resolution, not physical) to ~0.6 at 5–10 µm and then saturates. No clear crossover appears near ξ(τ\*) or ξ_max (1.6–2.6 µm), which are too close to the resolution to separate regimes.
+
+### Local width with local rotation
+
+Also from `step7_roughness.py` (`fig_local_width.png`, `local_width.npz`). Each frame's wall (1 in 5 frames) is cut into segments of projected length ℓ along the base plane (windows sliding by ℓ/2), and **each segment is rotated by its own tilt**: w² is the smallest eigenvalue of the covariance of its points, i.e. the variance normal to the segment's own best (orthogonal least-squares) line. ⟨w²(ℓ)⟩ is averaged over all segments and frames. The points are the full subpixel contour of the wall, resampled at uniform arc length, so overhangs are part of the shape and need no choice of height. Controls: the same on u_area; the line-removed width without rotation (w(ℓ) above); and the result without the segments whose own tilt differs from the base plane by more than 45° (`--max-tilt`). Self-test on synthetic walls: unbiased for ζ = 0.5 and 0.66 (0.53, 0.66), underestimates ζ = 1 (0.77).
+
+**The wall is far from a small-slope line below ~30 µm.** The local tilt of the segments has a standard deviation of 36–38° for ℓ ≲ 10 µm, 29° at 10–30 µm and 12° at 30–108 µm; 16–21 % of the segments up to ~12 µm are tilted by more than 45° (steps, tongues around defects, flanks of bulges; panel 1 shows a 22 µm segment whose best line follows a horizontal tongue). In this regime the measured exponent depends on how the local tilt is handled, so the local rotation matters, as anticipated.
+
+| range | rotation per segment (contour) | same, segments ≤ 45° | rotation, u_area | line removed, no rotation | sd of local tilt |
+|---|---|---|---|---|---|
+| 1–3 µm | 1.12 | 1.40 | 1.30 | 1.09 | 38° |
+| 3–10 µm | 1.05 | 1.22 | 1.17 | 0.99 | 36° |
+| 10–30 µm | 0.93 | 1.13 | 0.89 | 0.69 | 29° |
+| 30–108 µm | 0.57 | 0.60 | 0.38 | 0.57 | 12° |
+| 3–27 µm (default fit) | 0.98 ± 0.03 | 1.15 | 1.03 | 0.84 | 33° |
+
+- **Two regimes.** At small scales (≲ 10 µm) the wall is very rough, ζ_eff ≈ 1.0–1.2 with every method; at large scales (≳ 30 µm), where the wall is locally flat, ζ_eff ≈ 0.5–0.6 and the methods agree (u_area is lower, 0.38). The crossover is at ~10–30 µm. The ζ ≈ 0.75 from S(q) over 2.9–27 µm averages over both regimes.
+- **Possible interpretation (to be confirmed).** The theory of creep predicts several regimes: ζ_eq = 2/3 below the optimal (thermal-nucleus) length, ζ_dep ≈ 1.25 between that length and the size of the avalanches, and ζ_th = 1/2 at larger scales. A depinning-like roughness at a few µm and ζ ≈ 1/2 above ~30 µm would match the last two, with the crossover at the scale of the largest avalanches (their lateral extent reaches 10–55 µm in windows of 20–600 s). The resolution (~1 µm) hides the equilibrium regime if L_opt is sub-micron.
+- **Caveats.** Below ~3 µm the resolution and the contour noise contribute; the large-scale regime spans only a factor 3.5 in ℓ and relatively few independent configurations of one wall; and with local slopes of 30–40° the description of the wall as a single-valued elastic line is itself only approximate at small scales.
 
 ### Height distribution
 
