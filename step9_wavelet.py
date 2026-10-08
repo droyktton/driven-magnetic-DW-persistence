@@ -298,9 +298,18 @@ if rr is not None:
     if ok.sum() >= 3:
         cmp["global S(q), same scales"] = -(np.polyfit(np.log(q[ok]), np.log(S[ok]), 1)[0] + 1) / 2
     cmp["global S(q), step7 fit range"] = float(rg[f"{pre}_zS"])
-    if os.path.exists(os.path.join(d, "crossover.npz")):
-        cr = np.load(os.path.join(d, "crossover.npz"), allow_pickle=True)
-        cmp["l0 (step8, a / b / c) [µm]"] = tuple(float(cr[f"l0_{e}"]) for e in "abc" if f"l0_{e}" in cr.files)
+else:
+    # no usable wavelet range: show the earlier estimators over their own fit ranges
+    rg = np.load(os.path.join(d, "roughness.npz"))
+    pre = "area" if "area_q" in rg.files else "h"
+    for key, lab in (("zeta_pca", "local width, contour (own range)"), ("zeta_unfolded", "local width, folds excluded (own range)"),
+                     ("zeta_ctrl", "local width, u_area / h (own range)")):
+        if key in lw.files:
+            cmp[lab] = float(lw[key])
+    cmp["global S(q), step7 fit range"] = float(rg[f"{pre}_zS"])
+if os.path.exists(os.path.join(d, "crossover.npz")):
+    cr = np.load(os.path.join(d, "crossover.npz"), allow_pickle=True)
+    cmp["l0 (step8, a / b / c) [µm]"] = tuple(float(cr[f"l0_{e}"]) for e in "abc" if f"l0_{e}" in cr.files)
 
 print(f"   {'a[px]':>6s} {'l~4a':>8s} {'kept':>6s} {'26a/Rc':>7s} {'usable':>6s} {'F DOG-3':>10s} {'F DOG-4':>10s} "
       f"{'slope3':>7s} {'slope4':>7s}")
@@ -366,13 +375,19 @@ ax[2].axvline(rmin / 4, color="0.5", ls="--", lw=0.8)
 ax[2].set_xlabel("a [px]"); ax[2].set_ylabel("kept fraction")
 ax[2].set_title(f"Scale selection: kept ≥ {args.min_kept:g}, 26a ≤ {args.curv_ratio:g} R_c, 4a ≥ rmin (dashed)", fontsize=10)
 ax[2].legend(loc="lower left", fontsize=8); ax2.legend(loc="lower right", fontsize=8)
-labs = [f"DOG-{m}" for m in MS] + [k_ for k_, v in cmp.items() if not isinstance(v, tuple)]
+labs = [f"DOG-{m}" + ("" if np.isfinite(res[m]["z"]) else " (none)") for m in MS] + [k_ for k_, v in cmp.items() if not isinstance(v, tuple)]
 vals = [res[m]["z"] for m in MS] + [v for v in cmp.values() if not isinstance(v, tuple)]
 errs = [res[m]["dz"] for m in MS] + [0] * (len(vals) - len(MS))
 ax[3].errorbar(vals, range(len(vals)), xerr=errs, fmt="o", color="k", capsize=3)
 ax[3].set_yticks(range(len(vals))); ax[3].set_yticklabels(labs, fontsize=8)
 for zz in (0.5, 2 / 3, 1.25):
     ax[3].axvline(zz, color="0.8", lw=0.8, zorder=0)
-ax[3].set_xlabel("ζ"); ax[3].set_title("ζ: wavelets vs earlier estimators (same ℓ ≈ 4a range)", fontsize=10)
+if rr is None:
+    ax[3].text(0.5, 0.97, "no usable wavelet scale\n(kept < " + f"{args.min_kept:g}" + " or 26a > "
+               + f"{args.curv_ratio:g}" + " R_c at every a)\n→ no wavelet ζ; earlier estimators\nover their own fit ranges",
+               transform=ax[3].transAxes, ha="center", va="top", fontsize=8, color="C3")
+    ax[3].set_ylim(-0.5, len(vals) + 1.6)
+ax[3].set_xlabel("ζ")
+ax[3].set_title("ζ: wavelets vs earlier estimators" + (" (same ℓ ≈ 4a range)" if rr is not None else ""), fontsize=10)
 fig.tight_layout(); fig.savefig(os.path.join(d, "fig_wavelet.png"), dpi=110); plt.close(fig)
 print(f"   outputs: {d}/wavelet.npz, fig_wavelet.png")
