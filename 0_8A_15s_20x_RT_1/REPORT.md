@@ -267,6 +267,24 @@ Also from `step7_roughness.py` (`fig_local_sq.png`, `local_sq.npz`). The same se
 - **Scatter.** Each fit uses only a few Fourier modes (the low band contains modes 1–8), so neighbouring ℓ differ by ±0.1–0.15, more than the bootstrap error bars.
 - **High-q floor.** Beyond the resolution S(q, ℓ) has a floor that grows with ℓ, probably from steps created by the binning where parts of the segment are steep relative to its own axis; it is outside the fit range, but lifts the ℓ = 59–72 µm curves slightly above the global S(q) at q ≈ 1–2 µm⁻¹.
 
+### Interpretation: qEW below a crossover length l₀
+
+A. B. Kolton, E. E. Ferrero and A. Rosso, *Depinning free of the elastic approximation*, [arXiv:2306.13415](https://arxiv.org/abs/2306.13415) (2023), study the depinning of a domain wall in a 2D scalar-field model, keeping overhangs and without the elastic (single-valued) approximation. Below a crossover length l₀ ∼ Δ^−2.2, which decreases with the disorder strength Δ, the wall is a quenched Edwards–Wilkinson (qEW) interface with ζ ≈ 1.2; above l₀ the overhangs change the geometry and the structure factor gives ζ_eff ≈ 0.5. Overhangs become frequent at strong disorder. The local roughness measured here fits this picture:
+
+| | Kolton, Ferrero & Rosso (2D field model) | this study (Study 2) |
+|---|---|---|
+| small scales | qEW, ζ ≈ 1.2 | local rotation (width and S(q, ℓ)): ζ ≈ 1.0–1.3 |
+| large scales | ζ_eff ≈ 0.5 | local width: 0.57–0.69 at 30–108 µm |
+| crossover | l₀ ∼ Δ^−2.2, smaller for stronger disorder | ~10–30 µm |
+| overhangs | frequent at strong disorder | 13–15 % of the segments folded below 30 µm; sd of local tilt ~37° |
+
+- **The global ζ ≈ 0.75 is a mixture.** The global S(q) over 3–27 µm straddles l₀ and is not the exponent of either regime; the rotation segment by segment isolates the qEW part, and is needed precisely because of the overhangs and local tilts that the elastic description leaves out.
+- **Same treatment of multivalued walls.** The paper averages the multiple heights of an overhang, ũ(x), and notes that this creates artificial discontinuities; the binning of each segment here does the same, and the high-q floor of S(q, ℓ) that grows with ℓ is probably that effect.
+- **The persistence analysis lies in the qEW regime.** ξ(τ\*) ≈ 1.6 µm and ξ_max ≈ 2.6 µm are well below l₀, so the creep dynamics characterised by χ4 is that of an elastic, qEW-like wall, even if the wall is not elastic at large scales.
+- **Study 1** (faster wall, other sample region) keeps ζ ≈ 1.1 up to ~30–40 µm, with small local tilts and no folds, and its low-q band only drops to ~0.8 at 60–88 µm: a larger l₀, as expected for weaker effective disorder. This comparison is tentative: the video extraction of Study 1 gives a single-valued h by construction, so folds cannot appear there, and the studies differ in field, frame rate and magnification.
+- **Open point.** The spread of the local tilt decreases steadily with ℓ (37° → 12° → 3.5° at 108 µm), i.e. the wall flattens at large scales, as a self-affine line with ζ < 1 does; a self-similar, rotationally invariant contour would keep the same spread of tilts at every scale. The tilt spread vs ℓ is a direct test of which kind of large-scale geometry applies.
+- **Next.** Fit l₀ in both studies (two power laws with ζ = 1.25 and 0.5, l₀ free) and compare it with the folded fraction and the tilt spread as proxies of the disorder strength; overhang statistics vs scale; at other fields l₀ should stay fixed (it depends on disorder, not on the drive) while the creep lengths change.
+
 ### Height distribution
 
 Also from `step7_roughness.py` (`fig_height_distribution.png`, `height_distribution.npz`): the distribution of the deviations δu(s,t) = u(s,t) − ⟨u⟩_s(t) of every point of the wall from its mean position, **on the base plane of each frame** (rotation by θ0 plus the residual line of the frame, equivalent to rotating each frame by its own θ(t)), normalised by the width σ(t) of each frame. u increases in the direction of motion, so δu < 0 means a part of the wall lagging behind. Errors: block bootstrap over time.
