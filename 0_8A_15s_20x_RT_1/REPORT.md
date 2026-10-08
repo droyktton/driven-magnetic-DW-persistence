@@ -275,15 +275,34 @@ A. B. Kolton, E. E. Ferrero and A. Rosso, *Depinning free of the elastic approxi
 |---|---|---|
 | small scales | qEW, ζ ≈ 1.2 | local rotation (width and S(q, ℓ)): ζ ≈ 1.0–1.3 |
 | large scales | ζ_eff ≈ 0.5 | local width: 0.57–0.69 at 30–108 µm |
-| crossover | l₀ ∼ Δ^−2.2, smaller for stronger disorder | ~10–30 µm |
+| crossover | l₀ ∼ Δ^−2.2, smaller for stronger disorder | ~10–30 µm (fit, step8: 8–28 µm by estimator) |
 | overhangs | frequent at strong disorder | 13–15 % of the segments folded below 30 µm; sd of local tilt ~37° |
 
 - **The global ζ ≈ 0.75 is a mixture.** The global S(q) over 3–27 µm straddles l₀ and is not the exponent of either regime; the rotation segment by segment isolates the qEW part, and is needed precisely because of the overhangs and local tilts that the elastic description leaves out.
 - **Same treatment of multivalued walls.** The paper averages the multiple heights of an overhang, ũ(x), and notes that this creates artificial discontinuities; the binning of each segment here does the same, and the high-q floor of S(q, ℓ) that grows with ℓ is probably that effect.
 - **The persistence analysis lies in the qEW regime.** ξ(τ\*) ≈ 1.6 µm and ξ_max ≈ 2.6 µm are well below l₀, so the creep dynamics characterised by χ4 is that of an elastic, qEW-like wall, even if the wall is not elastic at large scales.
-- **Study 1** (faster wall, other sample region) keeps ζ ≈ 1.1 up to ~30–40 µm, with small local tilts and no folds, and its low-q band only drops to ~0.8 at 60–88 µm: a larger l₀, as expected for weaker effective disorder. This comparison is tentative: the video extraction of Study 1 gives a single-valued h by construction, so folds cannot appear there, and the studies differ in field, frame rate and magnification.
+- **Study 1** (faster wall, other sample region) has small local tilts and no folds (its video extraction gives a single-valued h by construction, so folds cannot appear there). By eye its ζ ≈ 1.1 seemed to extend to larger scales, suggesting a larger l₀ (weaker disorder), but the fit below gives a similar l₀ ≈ 14–28 µm: **the data do not show a difference in l₀ between the studies.**
 - **Open point.** The spread of the local tilt decreases steadily with ℓ (37° → 12° → 3.5° at 108 µm), i.e. the wall flattens at large scales, as a self-affine line with ζ < 1 does; a self-similar, rotationally invariant contour would keep the same spread of tilts at every scale. The tilt spread vs ℓ is a direct test of which kind of large-scale geometry applies.
-- **Next.** Fit l₀ in both studies (two power laws with ζ = 1.25 and 0.5, l₀ free) and compare it with the folded fraction and the tilt spread as proxies of the disorder strength; overhang statistics vs scale; at other fields l₀ should stay fixed (it depends on disorder, not on the drive) while the creep lengths change.
+- **Next.** Overhang statistics vs scale; at other fields l₀ should stay fixed (it depends on disorder, not on the drive) while the creep lengths change.
+
+### Crossover length l₀
+
+`python step8_crossover.py 0_8A_15s_20x_RT_1 magnetic_fliped` (`fig_crossover.png` in each study, `fig_crossover_compare.png`, `crossover.npz`). Three estimates:
+- **(a) local width** with local rotation, fitted with a smooth broken power law w² = A ℓ^{2ζ₁}[1 + (ℓ/l₀)^m]^{(2ζ₂−2ζ₁)/m};
+- **(b) global S(q)**, the same crossover written in q;
+- **(c) model free**: where the local slope ζ_eff(ℓ) crosses the midpoint between its small- and large-scale values.
+
+The main variant has ζ₁ = 1.25 and ζ₂ = 0.5 fixed, m = 2 and a lower cutoff of 3 µm. The variants (free exponents, m = 1, 2, 4, cutoff 2/3/5 µm, contour / folds excluded / u_area) give the systematic spread. Statistical errors come from a block bootstrap over time (200 refits). **Self-test:** synthetic walls with a known l₀ = 100 or 300 px, with and without a blur of σ = 3 px. All three estimators recover l₀ within ~±30 %, and (c) does worse when l₀ approaches L/3. The bootstrap error bars are much smaller than this bias, so the systematic spread is the relevant error.
+
+| | (a) local width | (b) global S(q) | (c) local slope | proxies |
+|---|---|---|---|---|
+| Study 2 | 28 µm (25–31; variants 6–47) | 8 µm (6–11; variants 5–44) | 24 µm (8–35) | l_fold 43 µm, l_tilt 39 µm |
+| Study 1 | 28 µm (26–29; variants 4–36) | 22 µm (20–25; variants 14–30) | 14 µm (11–22) | l_tilt 31 µm |
+
+- **l₀ ≈ 10–30 µm in both studies.** Every estimate is bracketed by the data (none is a lower bound).
+- **Study 2: the estimators disagree by a factor ~3.** The global S(q) puts the crossover at 8 µm, the local width at 16–28 µm (16 µm on the full contour, 28 µm without folds). The fits with free exponents are poorly constrained (ζ₂ → 0 for S(q)). The data are not a clean pair of power laws: the crossover is broad, and the global S(q) mixes the tilts and overhangs that the segment rotation removes.
+- **The two studies are not distinguishable.** Study 1, with weaker local tilts, has the same l₀ within errors. The earlier impression of a larger l₀ there is not supported.
+- **Proxies.** The folded fraction and the tilt spread fall to half their small-scale values at ~30–45 µm, the upper end of the l₀ estimates: overhangs and steep segments disappear on the scale where the roughness changes regime, as in the picture of Kolton, Ferrero & Rosso.
 
 ### Height distribution
 
