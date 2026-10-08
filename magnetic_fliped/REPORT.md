@@ -29,6 +29,8 @@ python step3_eps_sweep.py magnetic_fliped
 
 **Local width with local rotation** (`fig_local_width.png`): segments of length ℓ rotated by their own tilt give ζ = 1.09 ± 0.02 (line removed without rotation: 1.04). The local tilt is much smaller than in Study 2 (sd 17–19° at a few µm, 7° at 50 µm), so the rotation matters less here and all estimators agree on ζ ≈ 1.05–1.10 (without segments tilted > 45°: 1.10; the fold filter excludes nothing, since h is single-valued in this study).
 
+**Local structure factor S(q, ℓ)** (`fig_local_sq.png`, `local_sq.npz`; same segments, end-point line removed, see the Study 2 report for the method): ζ(ℓ) fitted over all q above the resolution is ≈ 1.0–1.1 for ℓ = 15–88 µm (1.12, 1.07, 0.98, 1.10, 1.08, 1.06, 1.19, 1.02, 1.08, 0.98), consistent with the global ζ = 1.10 ± 0.04; the low band alone (scales ~ ℓ) decreases from ~1.1 at 15–27 µm to 0.76–0.91 at 60–88 µm, as does the global S(q) in the same bands (1.2 → 0.8). The shortest segments (ℓ = 12.6 µm, 2.24) have only four modes above the resolution and are not reliable. No segments are folded here (h is single-valued).
+
 **Height distribution** (`fig_height_distribution.png`; h decreases as the wall advances here, so δh > 0 means lagging behind): on the base plane of each frame, skewness +0.29 ± 0.08 and excess kurtosis −0.42 ± 0.14; in windows of 20 µm, skewness +0.14 ± 0.08, excess kurtosis +1.1 ± 0.4; in windows of 5 µm, excess kurtosis +4.1 ± 1.0. As in Study 2, the long tail is on the lagging side. Without removing the per-frame line (mean only), the skewness changes sign (−0.13): the residual tilt (up to 4.6°) dominates it, which is why the base plane is needed.
 
 ## Discussion and outlook

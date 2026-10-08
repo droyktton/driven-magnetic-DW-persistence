@@ -4,7 +4,7 @@ Usage: python step7_roughness.py DIR [--every 5] [--rmin 16] [--mask-d 20]
        python step7_roughness.py DIR --from-h [--every 1]       (video studies, simulations)
        python step7_roughness.py --selftest                     (synthetic wall with known zeta)
 Outputs in DIR: roughness.npz, fig_roughness.png, local_width.npz, fig_local_width.png,
-height_distribution.npz, fig_height_distribution.png and a summary on stdout.
+local_sq.npz, fig_local_sq.png, height_distribution.npz, fig_height_distribution.png and a summary on stdout.
 
 TIFF studies. The wall is tilted in the image (Study 2: ~ -12 deg), and h(y,t) contains that slope,
 which would dominate any roughness measurement. Here every frame is put on the base plane:
@@ -39,6 +39,15 @@ w2 = smallest eigenvalue of the covariance of its points (orthogonal least-squar
 the full subpixel contour of the wall, resampled at uniform arc length, so overhangs are part of the
 shape and need no choice of height; control: the same on u_area. Also the spread of the local
 tilt of the segments vs l. Error: block bootstrap over frames.
+Local structure factor S(q,l): the same segments (4 rmin <= l <= 0.8 L), each rotated by its own tilt; the
+points are projected on the segment's own axis and normal, binned at 1 px along the axis (mean
+normal displacement per bin, so a fold is averaged), the line through its end points is removed
+(no window: for short segments a Hann window biases zeta upwards, end matching does not) and
+S(q,l) = |FFT(profile)|^2 / N, averaged in log bins of q over segments and frames.
+zeta(l) from S ~ q^-(1+2 zeta) over 2 pi / l < q < 2 pi / rmin (all the scales of the segment
+above the resolution) and over the lowest band 2 pi / l < q < --sq-band x that (scales ~ l);
+both with all segments and without folded ones (--max-fold). Compared with the slope of the global
+S(q) in the same band. Error: block bootstrap over frames.
 Height distribution: P(du/sigma) of the deviations du(s,t) = u(s,t) - <u>_s(t) from the base plane of
 each frame (rotation by theta0 + per-frame line = rotation by theta(t)), normalised by the width
 sigma(t) of each frame, with skewness and excess kurtosis (block-bootstrap errors). Also shown:
@@ -70,6 +79,8 @@ ap.add_argument("--max-tilt", type=float, default=45,
 ap.add_argument("--max-fold", type=float, default=1.5,
                 help="local width: also report the result without folded segments, whose contour length inside "
                      "the window exceeds this factor times the median contour length at the same l")
+ap.add_argument("--sq-band", type=float, default=8,
+                help="local S(q,l): width (factor in q) of the low-q band used for zeta at scale ~ l")
 ap.add_argument("--selftest", action="store_true", help="synthetic tilted wall with known zeta")
 args = ap.parse_args()
 
@@ -255,6 +266,58 @@ def pca_width(y, x, theta0_deg, ells, step=0.5):
     return out_w2, out_tilt, out_arc
 
 
+def seg_spectra(y, x, theta0_deg, l, step, edges, dx=1.0):
+    """Spectra of the segments of projected length l (as in pca_width), each on its own axis.
+    Returns per-segment arrays: binned S sums (nseg x nbins), counts, contour length / l."""
+    t0 = np.radians(theta0_deg)
+    s = y * np.cos(t0) + x * np.sin(t0)
+    o = np.argsort(s)
+    s, y, x = s[o], y[o], x[o]
+    nb_q = len(edges) - 1
+    out_S, out_C, out_arc = [], [], []
+    for s0 in np.arange(s[0], s[-1] - l, l / 2):
+        a0, b0 = np.searchsorted(s, s0), np.searchsorted(s, s0 + l)
+        if b0 - a0 < max(4, 0.5 * l / step):
+            continue
+        py, px = y[a0:b0], x[a0:b0]
+        my, mx = py.mean(), px.mean()
+        cyy, cxx, cxy = ((py - my) ** 2).mean(), ((px - mx) ** 2).mean(), ((py - my) * (px - mx)).mean()
+        al = 0.5 * np.arctan2(2 * cxy, cyy - cxx)                       # own axis, from y towards x
+        ca, sa = np.cos(al), np.sin(al)
+        ax_ = (py - my) * ca + (px - mx) * sa
+        nn = -(py - my) * sa + (px - mx) * ca
+        ib = np.floor((ax_ - ax_.min()) / dx).astype(int)
+        nb = ib.max() + 1
+        if nb < 16:
+            continue
+        cnt = np.bincount(ib, minlength=nb)
+        prof = np.bincount(ib, nn, minlength=nb) / np.maximum(cnt, 1)
+        good = cnt > 0
+        prof = np.interp(np.arange(nb), np.nonzero(good)[0], prof[good])
+        # line through the end points (made periodic): unbiased from the first mode for short segments,
+        # whereas a least-squares line + Hann window overestimates zeta by ~0.05-0.2 when l < 400 px
+        e0, e1 = prof[:3].mean(), prof[-3:].mean()
+        prof = prof - (e0 + (e1 - e0) * (np.arange(nb) - 1) / max(nb - 3, 1))
+        S = np.abs(np.fft.rfft(prof)) ** 2 / nb
+        q = 2 * np.pi * np.arange(S.size) / (nb * dx)
+        k = np.digitize(q[1:], edges) - 1
+        ok = (k >= 0) & (k < nb_q)
+        out_S.append(np.bincount(k[ok], S[1:][ok], minlength=nb_q))
+        out_C.append(np.bincount(k[ok], minlength=nb_q))
+        out_arc.append((b0 - a0) * step / l)
+    if not out_S:
+        return np.empty((0, nb_q)), np.empty((0, nb_q)), np.empty(0)
+    return np.array(out_S), np.array(out_C), np.array(out_arc)
+
+
+def q_edges(L):
+    return np.logspace(np.log10(2 * np.pi / L / 1.5), np.log10(np.pi * 1.01), int(np.log10(1.5 * L / 2) * 8) + 2)
+
+
+def zeta_band(qc, S, lo, hi):
+    return -(fit_power(qc, S, lo, hi)[0] + 1) / 2
+
+
 # ------------------------------------------------------------------ self test
 if args.selftest:
     rng = np.random.default_rng(0)
@@ -292,6 +355,24 @@ if args.selftest:
             w2l, _, _ = pca_width(yy_, xx_, theta, ells_t)
             zp.append(fit_power(ells_t.astype(float), np.array([v.mean() for v in w2l]), args.rmin, H * args.rmax_frac)[0] / 2)
         print(f"   local width with local rotation (PCA on the contour): zeta {np.mean(zp):.2f}±{np.std(zp):.2f}")
+        ed = q_edges(H)
+        qc_t = np.sqrt(ed[1:] * ed[:-1])
+        for l_t in (100, 200, 400):
+            zf, zl = [], []
+            for _ in range(6):
+                k = np.fft.rfftfreq(H)
+                amp = np.zeros_like(k); amp[1:] = k[1:] ** (-(1 + 2 * zeta) / 2)
+                u = np.fft.irfft(amp * np.exp(2j * np.pi * rng.random(k.size)), n=H)
+                u *= 8 / u.std()
+                dom = X < 600 + (Y - H / 2) * np.tan(np.radians(theta)) + u[:, None]
+                yy_, xx_ = contour_points(dom)
+                Ss, Cs, _ = seg_spectra(yy_, xx_, theta, l_t, 0.5, ed)
+                Sm = Ss.sum(0) / np.maximum(Cs.sum(0), 1)
+                q0 = 2 * np.pi / l_t
+                zf.append(zeta_band(qc_t, Sm, q0, 2 * np.pi / args.rmin))
+                zl.append(zeta_band(qc_t, Sm, q0, min(args.sq_band * q0, 2 * np.pi / args.rmin)))
+            print(f"   local S(q,l), l = {l_t} px: zeta all q above resolution {np.mean(zf):.2f}±{np.std(zf):.2f}, "
+                  f"low-q band {np.mean(zl):.2f}±{np.std(zl):.2f}")
     raise SystemExit
 
 # ------------------------------------------------------------------ data
@@ -500,6 +581,107 @@ ax2b.set_ylabel("% of segments excluded"); ax2b.legend(fontsize=8, loc="upper ri
 ax[2].set_xlabel(f"segment length ℓ [{unit}]"); ax[2].set_ylabel("sd of the local tilt [deg]")
 ax[2].set_title("Spread of the local tilt of the segments", fontsize=10)
 fig.tight_layout(); fig.savefig(os.path.join(args.dir, "fig_local_width.png"), dpi=120); plt.close(fig)
+
+# ------------------------------------------------------------------ local structure factor S(q, l)
+step_pts = 0.5                     # same convention as pca_width, so contour/l matches arc_med
+edges = q_edges(L)
+qc = np.sqrt(edges[1:] * edges[:-1])
+qres = 2 * np.pi / args.rmin
+jl = np.nonzero((ells >= 4 * args.rmin) & (ells <= 0.8 * L))[0]
+nblk = 12
+blk_of = np.repeat(np.arange(nblk), [len(b_) for b_ in np.array_split(np.arange(len(pts)), nblk)])
+SQ = {}                      # l -> dict(all=(Ssum_blocks, C_blocks), unf=(...), nseg, frac_fold)
+for j in jl:
+    l = ells[j]
+    Sb = {k_: np.zeros((nblk, len(qc))) for k_ in ("all", "unf")}
+    Cb = {k_: np.zeros((nblk, len(qc))) for k_ in ("all", "unf")}
+    nseg = nfold = 0
+    for f_, (yy_, xx_) in enumerate(pts):
+        Ss, Cs, arc = seg_spectra(yy_, xx_, th_pts, l, step_pts, edges)
+        if not arc.size:
+            continue
+        unf = arc <= args.max_fold * arc_med[j]
+        b_ = blk_of[f_]
+        Sb["all"][b_] += Ss.sum(0); Cb["all"][b_] += Cs.sum(0)
+        Sb["unf"][b_] += Ss[unf].sum(0); Cb["unf"][b_] += Cs[unf].sum(0)
+        nseg += arc.size; nfold += (~unf).sum()
+    SQ[l] = dict(Sb=Sb, Cb=Cb, nseg=nseg, frac_fold=nfold / max(nseg, 1))
+
+
+def sq_zetas(Sb, Cb, l, pick=None):
+    pick = np.arange(nblk) if pick is None else pick
+    Sm = Sb[pick].sum(0) / np.maximum(Cb[pick].sum(0), 1)
+    Sm = np.where(Cb[pick].sum(0) > 0, Sm, np.nan)
+    q0 = 2 * np.pi / l
+    return Sm, zeta_band(qc, Sm, q0, qres), zeta_band(qc, Sm, q0, min(args.sq_band * q0, qres))
+
+
+qg, Sg = logbin_xy(res[ref_name]["q"], res[ref_name]["S"])
+rng_q = np.random.default_rng(5)
+ls_sq = np.array(sorted(SQ))
+Z = {k_: np.full((len(ls_sq), 2), np.nan) for k_ in ("all", "unf")}
+dZ = {k_: np.full((len(ls_sq), 2), np.nan) for k_ in ("all", "unf")}
+Sq_mean = {k_: [] for k_ in ("all", "unf")}
+zg_band = np.full(len(ls_sq), np.nan)
+for i, l in enumerate(ls_sq):
+    for k_ in ("all", "unf"):
+        Sm, zf, zl = sq_zetas(SQ[l]["Sb"][k_], SQ[l]["Cb"][k_], l)
+        Sq_mean[k_].append(Sm)
+        Z[k_][i] = zf, zl
+        bt = np.array([sq_zetas(SQ[l]["Sb"][k_], SQ[l]["Cb"][k_], l, rng_q.integers(0, nblk, nblk))[1:]
+                       for _ in range(200)])
+        dZ[k_][i] = np.nanstd(bt, 0)
+    q0 = 2 * np.pi / l
+    zg_band[i] = zeta_band(qg, Sg, q0, min(args.sq_band * q0, qres))
+# local slope of the local width (folds excluded), over a factor 3 in l, for comparison
+zw_loc = np.array([fit_power(ells, w2_fold, l / np.sqrt(3), l * np.sqrt(3))[0] / 2 for l in ells])
+print(f"local structure factor S(q,l), segments rotated by their own tilt (fit: 2pi/l < q < 2pi/{args.rmin:g} px; "
+      f"low band: factor {args.sq_band:g} above 2pi/l):")
+for i, l in enumerate(ls_sq):
+    print(f"   l = {l:5.0f} px ({l * kk:6.1f} {unit}): {SQ[l]['nseg']:6d} segments, {SQ[l]['frac_fold']:.0%} folded | "
+          f"zeta all q: {Z['all'][i, 0]:.2f}±{dZ['all'][i, 0]:.2f} (unfolded {Z['unf'][i, 0]:.2f}±{dZ['unf'][i, 0]:.2f}) | "
+          f"low band: {Z['all'][i, 1]:.2f}±{dZ['all'][i, 1]:.2f} (unfolded {Z['unf'][i, 1]:.2f}±{dZ['unf'][i, 1]:.2f}); "
+          f"global S(q) in the same band {zg_band[i]:.2f}")
+np.savez(os.path.join(args.dir, "local_sq.npz"), q=qc, ells=ls_sq, S_all=np.array(Sq_mean["all"]),
+         S_unfolded=np.array(Sq_mean["unf"]), zeta_all=Z["all"], dzeta_all=dZ["all"], zeta_unfolded=Z["unf"],
+         dzeta_unfolded=dZ["unf"], zeta_global_band=zg_band, n_segments=[SQ[l]["nseg"] for l in ls_sq],
+         frac_folded=[SQ[l]["frac_fold"] for l in ls_sq], q_res=qres, sq_band=args.sq_band, um_per_px=k_um,
+         note="zeta columns: [fit over 2pi/l < q < q_res, fit over the low band 2pi/l < q < sq_band*2pi/l]")
+
+fig, ax = plt.subplots(1, 2, figsize=(14, 5.2))
+show = ls_sq[np.unique(np.round(np.linspace(0, len(ls_sq) - 1, min(7, len(ls_sq)))).astype(int))]
+for i, l in enumerate(ls_sq):
+    if l not in show:
+        continue
+    c = plt.cm.viridis(np.log(l / ls_sq[0]) / max(np.log(ls_sq[-1] / ls_sq[0]), 1e-9) * 0.9)
+    Sm = Sq_mean["unf"][i]
+    m = np.isfinite(Sm) & (qc >= 0.9 * 2 * np.pi / l)
+    ax[0].loglog(qc[m] / kk, Sm[m] * kk ** 3, "o-", ms=3, color=c,
+                 label=f"ℓ = {l * kk:.0f} {unit}: ζ = {Z['unf'][i, 0]:.2f}")
+    q0 = 2 * np.pi / l
+    ax[0].axvline(q0 / kk, color=c, lw=0.6, ls=":")
+ax[0].loglog(qg / kk, Sg * kk ** 3, "k-", lw=1.2, alpha=0.7, label=f"whole wall (u_{ref_name}), global S(q)")
+ax[0].axvline(qres / kk, color="0.4", ls="--", lw=0.8)
+ax[0].text(qres / kk, ax[0].get_ylim()[1], " resolution", va="top", fontsize=8, color="0.4")
+ax[0].set_xlabel(f"q [{unit}$^{{-1}}$]"); ax[0].set_ylabel(f"S(q, ℓ) [{unit}$^3$]")
+ax[0].set_title("Local structure factor, segments rotated by their own tilt (folds excluded)\n"
+                "dotted: q = 2π/ℓ, lower end of the fits", fontsize=10)
+ax[0].legend(fontsize=7)
+for k_, mk, lab in (("all", "o", "all segments"), ("unf", "v", "folds excluded")):
+    ax[1].errorbar(ls_sq * kk, Z[k_][:, 0], dZ[k_][:, 0], fmt=mk + "-", ms=4, capsize=2, mfc="none" if k_ == "all" else None,
+                   label=f"S(q,ℓ), all q above resolution, {lab}")
+    ax[1].errorbar(ls_sq * kk, Z[k_][:, 1], dZ[k_][:, 1], fmt=mk + "--", ms=4, capsize=2, mfc="none" if k_ == "all" else None,
+                   label=f"S(q,ℓ), low-q band (scales ~ ℓ), {lab}")
+ax[1].plot(ls_sq * kk, zg_band, "ks:", ms=4, mfc="none", label="global S(q), same low-q band")
+okw = (ells >= 2 * args.rmin) & (ells <= L / 2)
+ax[1].plot(ells[okw] * kk, zw_loc[okw], "-", color="0.6", lw=1.5, label="local width (folds excluded), local slope")
+for zz, lab in ((0.5, "1/2"), (2 / 3, "2/3"), (1.25, "1.25")):
+    ax[1].axhline(zz, color="0.8", lw=0.8, zorder=0)
+    ax[1].text(ax[1].get_xlim()[0] if False else ls_sq[0] * kk * 0.8, zz, lab, fontsize=8, color="0.5", va="bottom")
+ax[1].set_xscale("log"); ax[1].set_xlabel(f"segment length ℓ [{unit}]"); ax[1].set_ylabel("ζ(ℓ)")
+ax[1].set_title(r"Exponent from $S(q,\ell) \sim q^{-(1+2\zeta(\ell))}$ (error: block bootstrap)", fontsize=10)
+ax[1].legend(fontsize=7)
+fig.tight_layout(); fig.savefig(os.path.join(args.dir, "fig_local_sq.png"), dpi=120); plt.close(fig)
 
 # ------------------------------------------------------------------ height distribution
 def moments(x):

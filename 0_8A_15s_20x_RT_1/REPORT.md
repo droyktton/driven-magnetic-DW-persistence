@@ -248,6 +248,25 @@ Also from `step7_roughness.py` (`fig_local_width.png`, `local_width.npz`). Each 
 - **Possible interpretation (to be confirmed).** The theory of creep predicts several regimes: ζ_eq = 2/3 below the optimal (thermal-nucleus) length, ζ_dep ≈ 1.25 between that length and the size of the avalanches, and ζ_th = 1/2 at larger scales. A depinning-like roughness at a few µm and ζ ≈ 1/2 above ~30 µm would match the last two, with the crossover at the scale of the largest avalanches (their lateral extent reaches 10–55 µm in windows of 20–600 s). The resolution (~1 µm) hides the equilibrium regime if L_opt is sub-micron.
 - **Caveats.** Below ~3 µm the resolution and the contour noise contribute; the large-scale regime spans only a factor 3.5 in ℓ and relatively few independent configurations of one wall; and with local slopes of 30–40° the description of the wall as a single-valued elastic line is itself only approximate at small scales.
 
+### Local structure factor S(q, ℓ)
+
+Also from `step7_roughness.py` (`fig_local_sq.png`, `local_sq.npz`). The same segments as for the local width (projected length ℓ along the base plane, windows sliding by ℓ/2), each rotated by its own tilt: the contour points are projected on the segment's own axis and normal, binned at 1 px along the axis (mean normal displacement per bin, so a fold is averaged), and S(q, ℓ) = |FFT(profile)|²/N is averaged in log bins of q over segments and frames. ζ(ℓ) is fitted to S ∝ q^−(1+2ζ) over 2π/ℓ < q < 2π/(25 px) (every scale of the segment above the resolution) and over the lowest band 2π/ℓ < q < 8·2π/ℓ (scales ~ ℓ), with all segments and without folded ones; errors by block bootstrap over time. ℓ goes from 4× the resolution cutoff (12 µm) to 0.8 L (72 µm).
+
+**Non-periodic ends.** A segment does not end at the height where it starts, and the FFT sees that jump as a discontinuity, whose spectrum ∝ q⁻² flattens S and pulls ζ towards 1/2. Tested on synthetic profiles (ζ = 0.5–1.25, ℓ = 100–400 px, fit from the first mode): a least-squares line + Hann window, as used for the whole wall, overestimates ζ by 0.05–0.2 in short segments (the window spreads the lowest modes); subtracting the line through the two end points, without a window, is unbiased within ±0.03, because the periodic continuation is then continuous and only a slope change remains (leakage ∝ q⁻⁴). The pipeline uses end matching. The full self-test (synthetic tilted wall → subpixel contour → segments rotated by their own tilt) recovers ζ within ~0.1.
+
+| ℓ [µm] | 12 | 14 | 18 | 22 | 26 | 32 | 39 | 48 | 59 | 72 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ζ, all q, folds excluded | 1.09 | 0.82 | 1.00 | 1.00 | 0.90 | 0.92 | 1.09 | 0.79 | 0.86 | 0.82 |
+| ζ, all q, all segments | 1.04 | 0.95 | 0.86 | 0.79 | 0.69 | 1.16 | 0.97 | 0.78 | 0.84 | 0.82 |
+| global S(q), same low band | 0.77 | 0.83 | 0.86 | 0.81 | 0.80 | 0.82 | 0.88 | 0.86 | 0.81 | 0.78 |
+| folded segments | 14 % | 13 % | 12 % | 13 % | 13 % | 9 % | 10 % | 2 % | 3 % | 1 % |
+
+- **S(q, ℓ) falls on the global S(q)** where their q ranges overlap, as expected for a statistically uniform wall.
+- **Without folded segments, ζ(ℓ) ≈ 0.9–1.1 for ℓ = 12–40 µm**, close to the local width (≈ 1.0–1.05 at those scales) and above the global S(q) in the same band (0.77–0.88). Keeping the folded segments makes ζ erratic at 26–40 µm (0.69 to 1.29 in the low band): their binned profiles contain abrupt steps.
+- **For ℓ = 48–72 µm all variants give ζ ≈ 0.8–0.9**, higher than the 0.6–0.7 of the local width at those scales; the drop towards 1/2 seen in the local width is not confirmed here. Both are uncertain: few independent configurations of one wall.
+- **Scatter.** Each fit uses only a few Fourier modes (the low band contains modes 1–8), so neighbouring ℓ differ by ±0.1–0.15, more than the bootstrap error bars.
+- **High-q floor.** Beyond the resolution S(q, ℓ) has a floor that grows with ℓ, probably from steps created by the binning where parts of the segment are steep relative to its own axis; it is outside the fit range, but lifts the ℓ = 59–72 µm curves slightly above the global S(q) at q ≈ 1–2 µm⁻¹.
+
 ### Height distribution
 
 Also from `step7_roughness.py` (`fig_height_distribution.png`, `height_distribution.npz`): the distribution of the deviations δu(s,t) = u(s,t) − ⟨u⟩_s(t) of every point of the wall from its mean position, **on the base plane of each frame** (rotation by θ0 plus the residual line of the frame, equivalent to rotating each frame by its own θ(t)), normalised by the width σ(t) of each frame. u increases in the direction of motion, so δu < 0 means a part of the wall lagging behind. Errors: block bootstrap over time.
