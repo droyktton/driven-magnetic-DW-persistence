@@ -304,6 +304,28 @@ The main variant has ζ₁ = 1.25 and ζ₂ = 0.5 fixed, m = 2 and a lower cutof
 - **The two studies are not distinguishable.** Study 1, with weaker local tilts, has the same l₀ within errors. The earlier impression of a larger l₀ there is not supported.
 - **Proxies.** The folded fraction and the tilt spread fall to half their small-scale values at ~30–45 µm, the upper end of the l₀ estimates: overhangs and steep segments disappear on the scale where the roughness changes regime, as in the picture of Kolton, Ferrero & Rosso.
 
+### Wavelets in local frames (DOG-3, DOG-4)
+
+`python step9_wavelet.py 0_8A_15s_20x_RT_1` (`fig_wavelet.png`, `wavelet.npz`). It uses the estimator validated in `wall_exponents.py`:
+- **Curve.** The subpixel contour of every 5th frame is resampled at uniform arc length (1 px). For this step it is taken from the domain smoothed by σ = 1 px, below the optical resolution, because the binary contour has a pixel staircase that makes t go backwards.
+- **Windows.** For each wavelet scale a, windows of ~26a points (H = 6a) are put in their own PCA frame. Windows where t is not strictly monotonic, or that do not cover t_c ± H, are discarded.
+- **Coefficient.** u(t) is interpolated on a unit grid, and W is the L1-normalised DOG-3 (or DOG-4) coefficient at the window centre. F(a) = √⟨W²⟩ ∼ a^ζ, with ℓ ≈ 4a.
+- **Usable scales.** A scale is used only if (i) the kept fraction of windows is ≥ 0.98, (ii) the window length 26a ≤ 0.6 R_c, the 10th percentile of the radius of curvature of the curve smoothed over 13a points, and (iii) 4a ≥ rmin.
+- **Fit and errors.** The fit range is the longest run of usable scales whose local slopes agree within ±0.15. The error comes from a block bootstrap over 6 contiguous segments × 12 time blocks.
+
+**Self-test.** 12 synthetic walls per case, tilted 12°, self-affine below 256 px, slope 6 % at 64 px. The wrapper reproduces `wavelet_rms` exactly.
+
+| input | no blur, DOG-3 / DOG-4 (automatic range) | blur σ = 3 px (~ optical PSF), automatic range | blur σ = 3 px, a = 4–8 px |
+|---|---|---|---|
+| ζ = 0.5 | no usable range (kept 0.4 at a = 8: too wiggly at the pixel scale) | 0.62 / 0.63 | 1.12 / 1.33 |
+| ζ = 1.0 | 0.96 ± 0.06 / 0.95 ± 0.07 | 1.12 / 1.12 | 1.53 / 1.72 |
+| ζ = 1.25 | 1.15 ± 0.11 / 1.14 ± 0.08 | 1.25 / 1.34 | 1.82 / 1.94 |
+
+- **Without blur** the estimator is unbiased within ~0.1.
+- **The optical blur steepens F(a).** It inflates ζ by +0.4–0.6 at a ≤ 8 px (ℓ ≲ 4 µm here) and still by ~+0.1–0.2 at a = 8–19 px. Wavelets with vanishing moments are blind to tilt and curvature, but not to the PSF.
+
+**Study 2: no usable scale.** The kept fraction is already 0.85 at a = 2 px (ℓ ≈ 0.9 µm). It falls to 0.46 at a = 8 px, 0.11 at a = 19 px and ~0 above. The window length exceeds 0.6 R_c at every scale (26a/R_c = 0.85–1.7). Windows of 26a points along this wall fold back, or bend more than the validated geometry allows, at every scale. The wall is too tortuous for this estimator under the requested criteria, and **no ζ is reported**. Fitting the windows that were kept would select the smoothest parts of the wall: they are 85 % of the windows at the smallest scale but only 10 % at ℓ ≈ 9 µm, a scale-dependent selection. For reference only, the local slopes of those windows are 1.3–1.8 at a ≤ 8 px (inflated by the PSF, as above) and ~1.0–1.2 at a = 9–16 px, similar to the rotated local width. This is consistent with the large local tilts and folds found earlier (sd ~37°, 13–15 % folded segments). Unlike the windowed local width and S(q, ℓ), which average over folds, a strictly monotonic local frame does not exist for most windows of this wall.
+
 ### Height distribution
 
 Also from `step7_roughness.py` (`fig_height_distribution.png`, `height_distribution.npz`): the distribution of the deviations δu(s,t) = u(s,t) − ⟨u⟩_s(t) of every point of the wall from its mean position, **on the base plane of each frame** (rotation by θ0 plus the residual line of the frame, equivalent to rotating each frame by its own θ(t)), normalised by the width σ(t) of each frame. u increases in the direction of motion, so δu < 0 means a part of the wall lagging behind. Errors: block bootstrap over time.

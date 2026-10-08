@@ -64,7 +64,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.ndimage import binary_fill_holes, distance_transform_edt, label, rotate
+from scipy.ndimage import binary_fill_holes, distance_transform_edt, gaussian_filter, label, rotate
 
 ap = argparse.ArgumentParser()
 ap.add_argument("dir", nargs="?", help="study folder")
@@ -170,7 +170,7 @@ else:
     dist_rot = rotate(distance_transform_edt(~defects), ang, reshape=True, order=1, cval=0)
     T = len(theta)
     frames = np.arange(0, T, args.every)
-    ua_all, uf_all, ub_all, gp_all, contours = [], [], [], [], []
+    ua_all, uf_all, ub_all, gp_all, contours, contours_s1 = [], [], [], [], [], []
     edge = lambda lab_: np.setdiff1d(np.unique(lab_[:, 0]), [0])
     for i, kf in enumerate(frames):
         dom = ta <= kf
@@ -180,6 +180,9 @@ else:
         ua, uf, ub, gp = heights_rotated(dom, domf, ang, valid)
         ua_all.append(ua); uf_all.append(uf); ub_all.append(ub); gp_all.append(gp)
         contours.append(contour_points(domf))
+        # for step9 (strictly monotonic local windows): contour of the domain smoothed by 1 px, without
+        # the pixel staircase of the binary contour (below the optical resolution, ~3-4 px)
+        contours_s1.append(contour_points(gaussian_filter(domf.astype(float), 1.0)))
         if i % 60 == 0:
             print(f"  frame {kf}/{T}")
     ua_all, uf_all, ub_all, gp_all = map(np.array, (ua_all, uf_all, ub_all, gp_all))
@@ -194,10 +197,10 @@ else:
     wmask = (dist_rot[run[None, :], cols] > args.mask_d).astype(float)
     example = (frames[len(frames) // 2], len(frames) // 2, run)
     # ordered subpixel contours of the frames used (for step9, wavelets in local frames)
-    off = np.cumsum([0] + [c_[0].size for c_ in contours])
-    np.savez_compressed(os.path.join(args.dir, "contours.npz"), y=np.concatenate([c_[0] for c_ in contours]),
-                        x=np.concatenate([c_[1] for c_ in contours]), offsets=off, frames=frames, theta0=theta0,
-                        step=0.5)
+    off = np.cumsum([0] + [c_[0].size for c_ in contours_s1])
+    np.savez_compressed(os.path.join(args.dir, "contours.npz"), y=np.concatenate([c_[0] for c_ in contours_s1]),
+                        x=np.concatenate([c_[1] for c_ in contours_s1]), offsets=off, frames=frames, theta0=theta0,
+                        step=0.5, smoothing_px=1.0)
     print(f"theta0 = {theta0:.2f} deg (rotation {ang:+.2f}); rows kept on the base plane: {run.size} "
           f"({run.size * kk:.0f} {unit}); frames used: {len(frames)}")
 

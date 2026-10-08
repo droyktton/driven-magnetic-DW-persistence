@@ -2,3 +2,4 @@ frames/
 */frames/
 *.mp4
 __pycache__/
+*/contours.npz
