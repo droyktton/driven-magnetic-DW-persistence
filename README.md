@@ -181,6 +181,8 @@ Simulated walls can be analysed with step2/step3 by writing `DIR/h_xt_sub.npy` (
 
 `python step9_wavelet.py DIR [--min-kept 0.98] [--curv-ratio 0.6] [--n-boot 300]`, `--selftest` for synthetic walls (also with an optical blur). Uses the estimator of `wall_exponents.py` (`local_frame_windows`, `dog_kernel`, as in `wavelet_rms`). The curves are the subpixel contours saved by step7 in `contours.npz` (TIFF studies; contour of the domain smoothed by 1 px, without the pixel staircase; not tracked by git, regenerate with step7) or the curves (column, h) from `h_xt_sub.npy`. Each curve is resampled at unit arc length. For each scale a, windows of ~26a points are put in their own PCA frame; windows where t is not strictly monotonic are discarded; W = L1-normalised DOG-3 / DOG-4 coefficient at the window centre; F(a) = √⟨W²⟩ ∼ a^ζ (ℓ ≈ 4a). A scale is used only if the kept fraction is ≥ `--min-kept`, the window length 26a ≤ `--curv-ratio` × R_c (10th percentile of the radius of curvature of the curve smoothed over 13a points) and 4a ≥ rmin of step7. The fit range is the longest run of usable scales whose local slopes agree within ±0.15. Errors come from a block bootstrap over 6 contiguous segments × 12 time blocks. Comparison with the local width and the global S(q) over the same ℓ range. Outputs `wavelet.npz`, `fig_wavelet.png`. The optical blur biases ζ upwards at a ≲ 2× the PSF width (see the self-test). For very tortuous walls (Study 2) no scale passes the criteria and no ζ is reported.
 
+A self-contained description of all the roughness methods (local ζ, crossover l₀, geometric descriptors), with their validation and pitfalls, is in [`ROUGHNESS_METHODS.md`](ROUGHNESS_METHODS.md).
+
 ## Figures
 
 | File | What it shows |
