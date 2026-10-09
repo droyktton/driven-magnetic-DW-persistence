@@ -1,0 +1,44 @@
+{
+  "fps": 0.045351,
+  "um_per_px": 0.1175,
+  "n_frames_video": 1800,
+  "frame_first": 0,
+  "frame_last": 1799,
+  "height": 826,
+  "width": 580,
+  "source": "tiff",
+  "tiff_dir": "/media/koltona/MOBILEDATAMOKE/MOKE 2016/1sep16",
+  "crop_right": 1226,
+  "crop_left": 400,
+  "rows_used": [
+    260,
+    840
+  ],
+  "drift_max_px": [
+    15.0,
+    2.5
+  ],
+  "contrast_threshold": 0.01999890663086845,
+  "n_defect_px": 73,
+  "frac_rows_front_ne_area": 0.06703065134099617,
+  "tilt_deg_first_last": [
+    19.627968025201508,
+    14.664948145590078
+  ],
+  "overhang_rows_mean": 25.831666666666667,
+  "nref": 5,
+  "offset": "auto",
+  "flatfield": 2,
+  "init_wall": true,
+  "rows_option": [
+    260,
+    840
+  ],
+  "geometry": "dark domain on the left, wall moving to +x; h = W-1-x_eff (switched area per row), columns of h = image rows y0..y1-1 (registered to frame 0)",
+  "median_x": 5,
+  "edge_margin": 2,
+  "frac_retreat": 0.0,
+  "warnings": [
+    "the mean <h> moves backward in 731 steps"
+  ]
+}

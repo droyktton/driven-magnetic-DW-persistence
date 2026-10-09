@@ -59,9 +59,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.image import imread
-from scipy.ndimage import (binary_dilation, binary_fill_holes, distance_transform_edt,
+from scipy.ndimage import (binary_dilation, binary_erosion, binary_fill_holes, distance_transform_edt,
                            gaussian_filter, gaussian_filter1d, label, median_filter)
 from scipy.ndimage import shift as nd_shift
+from scipy.ndimage import uniform_filter1d
 from skimage.filters import threshold_otsu
 
 ap = argparse.ArgumentParser()
@@ -89,6 +90,29 @@ tg = ap.add_argument_group("TIFF folder input (--roi/--rotate/--flipud/--fliplr/
 tg.add_argument("--crop-right", default="auto",
                 help="keep columns x < N (camera coordinates); auto = where the illumination of the "
                      "field of view drops below 90%% of its plateau, minus 20 px")
+tg.add_argument("--offset", default="0",
+                help="camera/background offset subtracted from every frame before any ratio: a number, or "
+                     "'auto' = median of the four 40x40 image corners of each frame (use when the field "
+                     "of view is a bright aperture on a dark, offset background)")
+tg.add_argument("--flatfield", type=int, default=0,
+                help="order of a 2D polynomial illumination (in log I) fitted to the never-switching pixels of "
+                     "every frame relative to the first frames and divided out; 0 = divide by their median only. "
+                     "Use when the illumination profile changes during the run")
+tg.add_argument("--crop-left", type=int, default=0,
+                help="discard the columns x < N (registered frame), e.g. a vignetted aperture edge on the left; "
+                     "the domain left of the wall must still reach the new left edge")
+tg.add_argument("--init-wall", action="store_true",
+                help="locate the wall in the first frames directly, as the dark-to-bright intensity step "
+                     "(dynamic-programming path along the rows), and take everything left of it as the "
+                     "initial domain. Needed where parts of the wall never move (the swept area then has "
+                     "no pixels in those rows). Rows where the path is not inside the illuminated aperture "
+                     "are dropped")
+tg.add_argument("--init-room", type=int, default=150,
+                help="with --init-wall: keep only rows with at least this many px of aperture to the right "
+                     "of the initial wall")
+tg.add_argument("--rows", type=int, nargs=2, metavar=("Y0", "Y1"), default=None,
+                help="keep only the image rows Y0 <= y < Y1 (registered frame, the y axis of the QC figures), "
+                     "e.g. to drop parts of the wall that run along defects or the aperture edge")
 tg.add_argument("--nref", type=int, default=5, help="frames averaged for the bright/dark references")
 tg.add_argument("--trim-y", type=int, default=12,
                 help="rows discarded at the top and bottom, on top of the maximum vertical drift")
@@ -238,7 +262,11 @@ def mm_fps(d):
 def read_tiff(f):
     import tifffile
     im = tifffile.imread(f).astype(np.float32)
-    return im[..., :3].mean(-1) if im.ndim == 3 else im
+    im = im[..., :3].mean(-1) if im.ndim == 3 else im
+    if args.offset == "auto":
+        c = 40
+        return im - np.median(np.concatenate([im[:c, :c], im[:c, -c:], im[-c:, :c], im[-c:, -c:]]))
+    return im - float(args.offset)
 
 
 def highpass(a):
@@ -267,7 +295,7 @@ def wall_from_tiffs():
     H0, W0 = read_tiff(files[0]).shape
     xc = auto_crop_right(files) if args.crop_right == "auto" else int(args.crop_right)
     print(f"tiff folder={args.video}  frames={T}  size={W0}x{H0}  fps={fps:g} "
-          f"(dt={1 / fps:g} s)  crop right at x={xc}")
+          f"(dt={1 / fps:g} s)  crop right at x={xc}, left at x={args.crop_left}")
 
     # 1. drift vs frame 0, smoothed in time (it is a slow mechanical drift)
     ref = highpass(read_tiff(files[0]))[:, :xc]
@@ -281,9 +309,51 @@ def wall_from_tiffs():
     y0 = int(np.ceil(max(drift_s[:, 0].max(), 0))) + args.trim_y
     y1 = H0 + int(np.floor(min(drift_s[:, 0].min(), 0))) - args.trim_y
 
+    rows_reg = [y0, y1]          # rows returned by reg(); fixed after --init-wall, not by --rows
+
     def reg(k):
         g = nd_shift(gaussian_filter(read_tiff(files[k]), 1.5), drift_s[k], order=1, mode="nearest")
-        return g[y0:y1, :xc]
+        return g[rows_reg[0]:rows_reg[1], args.crop_left:xc]
+
+    init_path = None
+    if args.init_wall:
+        # wall at t=0 = path of maximal dark-to-bright gradient d/dx log I, one x per row, |dx| <= 3 px
+        # between rows (dynamic programming); defects are strong but short, so the cost is clipped
+        F = np.mean([reg(k) for k in range(args.nref)], 0)
+        ins0 = binary_erosion(binary_fill_holes(F > 0.5 * np.median(F)), iterations=30, border_value=1)
+        gx = gaussian_filter1d(gaussian_filter(np.log(np.maximum(F, 1e-3)), [4, 2]), 2, axis=1, order=1)
+        z = np.where(ins0, gx / (1.48 * np.median(np.abs(gx[ins0]))), 0)
+        cost = -np.clip(z, -3, 6)
+        Hh, Ww = cost.shape
+        acc, back = cost.copy(), np.zeros((Hh, Ww), int)
+        cols = np.arange(Ww)
+        for y in range(1, Hh):
+            best, arg = np.full(Ww, np.inf), np.zeros(Ww, int)
+            for dx in range(-3, 4):
+                sh = np.roll(acc[y - 1], dx)
+                if dx > 0:
+                    sh[:dx] = np.inf
+                elif dx < 0:
+                    sh[dx:] = np.inf
+                sh = sh + 0.5 * abs(dx)
+                m = sh < best
+                best[m], arg[m] = sh[m], cols[m] - dx
+            acc[y], back[y] = cost[y] + best, arg
+        path = np.zeros(Hh, int)
+        path[-1] = np.argmin(acc[-1])
+        for y in range(Hh - 1, 0, -1):
+            path[y - 1] = back[y, path[y]]
+        # keep the longest run of rows where the path is >= 20 px inside the aperture and on a real step
+        # (the aperture must also leave room for the advance: --init-room px to the right of the wall)
+        ok = np.array([ins0[y, max(path[y] - 20, 0):path[y] + args.init_room + 1].all() and z[y, path[y]] > 2
+                       for y in range(Hh)])
+        ok = uniform_filter1d(ok.astype(float), 51, mode="nearest") > 0.7   # tolerate defects on the wall
+        r0, r1 = longest_run(ok)
+        print(f"initial wall: rows {y0 + r0}..{y0 + r1 - 1} of {y0}..{y1 - 1} kept "
+              f"(path inside the aperture with {args.init_room} px room, gradient > 2 sigma)")
+        init_path = path[r0:r1]
+        y0, y1 = y0 + r0, y0 + r1
+        rows_reg[:] = [y0, y1]
 
     # 2. normalisation region: pixels that never switch (first pass with full-frame medians)
     first = [reg(k) for k in range(args.nref)]
@@ -291,14 +361,59 @@ def wall_from_tiffs():
     B0 = np.mean([g / np.median(g) for g in first], 0)
     D0 = np.mean([g / np.median(g) for g in last], 0)
     c0 = (B0 - D0) / B0
+    # inside the illuminated aperture, away from its edge (the aperture is fixed on the camera, so its
+    # edge moves in the registered frames); only with --offset (aperture images); otherwise the whole frame
+    inside = binary_erosion(binary_fill_holes(B0 > 0.5 * np.median(B0)), iterations=30, border_value=1) \
+        if args.offset != "0" else np.ones(B0.shape, bool)
+    c0[~inside] = 0
     R = ~binary_dilation(c0 > threshold_otsu(c0), iterations=10) & (B0 > 0.6 * np.median(B0))
     norm = lambda g: g / np.median(g[R])
+    if args.flatfield > 0:
+        # smooth illumination change vs the first frames, P_k(x, y) = poly in log(g / F), fitted on the
+        # never-switching pixels; two passes, since R itself comes from the uncorrected contrast
+        Hh, Ww = B0.shape
+        yy_, xx_ = np.mgrid[0:Hh, 0:Ww]
+        yn, xn = (yy_ - Hh / 2) / Hh, (xx_ - Ww / 2) / Ww
+        n_ = args.flatfield
+        Vp = np.stack([xn ** i * yn ** j for i in range(n_ + 1) for j in range(n_ + 1 - i)], -1)
+        F = np.mean(first, 0)
+        logF = np.log(np.maximum(F, 1e-3))
+
+        def make_norm(Rm):
+            Rm = Rm & inside
+            Rs = Rm.copy(); Rs[::2] = False; Rs[:, ::2] = False      # subsample for speed
+            Vs = Vp[Rs]
+
+            def nrm(g):
+                y = np.log(np.maximum(g[Rs], 1e-3)) - logF[Rs]
+                coef = np.linalg.lstsq(Vs, y, rcond=None)[0]
+                res = y - Vs @ coef
+                keep = np.abs(res - np.median(res)) < 3 * 1.48 * np.median(np.abs(res - np.median(res)))
+                coef = np.linalg.lstsq(Vs[keep], y[keep], rcond=None)[0]
+                return g / np.exp(Vp @ coef)
+            return nrm
+        for _ in range(2):
+            norm = make_norm(R if _ else inside)
+            Bt = np.mean([norm(g) for g in first], 0)
+            Dt = np.mean([norm(g) for g in last], 0)
+            ct = (Bt - Dt) / Bt
+            ct[~inside] = 0
+            R = ~binary_dilation(ct > threshold_otsu(ct[inside]), iterations=10) & (B0 > 0.6 * np.median(B0))
+            if (R & inside).sum() < 0.3 * inside.sum():     # noisy contrast: keep the robust fit on all pixels
+                print(f"  flat-field: never-switching region only {(R & inside).sum() / inside.sum():.0%} of the "
+                      f"aperture, using the whole aperture (robust fit)")
+                R = inside.copy()
     B = np.mean([norm(g) for g in first], 0)
     Dk = np.mean([norm(g) for g in last], 0)
     del first, last
     c = (B - Dk) / B
-    thr_c = threshold_otsu(c)
+    c[~inside] = 0
+    thr_c = threshold_otsu(c[inside])
     M = c > thr_c                                     # pixels swept during the movie
+    if init_path is not None:
+        # parts of the band where the wall moved little have weaker contrast: hysteresis threshold
+        from skimage.filters import apply_hysteresis_threshold
+        M = apply_hysteresis_threshold(c, 0.5 * thr_c, thr_c) & inside
     den = np.where(M, B - Dk, 1.0)
 
     # 3. arrival-time map: best step fit of s(t) per pixel (1 before switching, 0 after), i.e. the
@@ -321,19 +436,33 @@ def wall_from_tiffs():
     # they belong to the initial domain if connected to the left edge, otherwise to the never-reached side
     lab, _ = label(M | holes)
     main = lab == np.argmax(np.bincount(lab.ravel())[1:]) + 1
+    if init_path is not None:
+        # every swept patch that touches the initial wall is wall motion, not only the largest one
+        near = np.abs(np.arange(M.shape[1])[None, :] - init_path[:, None]) <= 3
+        main = np.isin(lab, np.setdiff1d(np.unique(lab[near]), [0]))
     lab, _ = label(~main)
     left = np.isin(lab, edge_ids(lab[:, 0]))
     holes &= main
     ta = ta.astype(float)
+    if init_path is not None:
+        left = np.arange(M.shape[1])[None, :] < init_path[:, None]
     ta[~main & left], ta[~main & ~left] = -1, np.inf
     if holes.any():
         _, (iy, ix) = distance_transform_edt(holes, return_indices=True)
         ta[holes] = ta[iy[holes], ix[holes]]
     ta = median_filter(ta, 5)
+    # --rows: the segmentation above uses all rows (flat-field and thresholds need the large field);
+    # only the wall output is restricted
+    rs = slice(0, ta.shape[0])
+    if args.rows is not None:
+        rs = slice(max(args.rows[0], y0) - y0, min(args.rows[1], y1) - y0)
+        ta, M, c, holes, Dk, den = (a[rs] for a in (ta, M, c, holes, Dk, den))
+        y0, y1 = y0 + rs.start, y0 + rs.stop
+        print(f"wall output restricted to rows {y0}..{y1 - 1}")
 
     # 4. wall per frame + QC renders
     Hc, Wc = M.shape
-    lo, hi = np.percentile(norm(reg(0)), [1, 99.5])
+    lo, hi = np.percentile(norm(reg(0))[rs], [1, 99.5])
     os.makedirs(out("qc"), exist_ok=True)
     for f in glob.glob(os.path.join(out("qc"), "overlay_*.png")):
         os.remove(f)
@@ -347,7 +476,7 @@ def wall_from_tiffs():
         rows = dom.any(1)
         xr = np.where(rows, Wc - 1 - np.argmax(dom[:, ::-1], axis=1), -1)
         nover = int(((np.diff(dom.astype(np.int8), axis=1) == -1).sum(1) > 1).sum())
-        g = norm(reg(k))
+        g = norm(reg(k))[rs]
         s = (g - Dk) / den
         xs = np.full(Hc, np.nan)
         ok = rows & (xr + 1 < Wc)
@@ -356,7 +485,11 @@ def wall_from_tiffs():
         with np.errstate(invalid="ignore", divide="ignore"):
             frac = np.clip((0.5 - s0) / (s1 - s0), 0, 1)
         xs[ok] = xr[ok] + np.nan_to_num(frac, nan=0.5)
-        img = np.clip((g - lo) / (hi - lo) * 255, 0, 255).astype(np.uint8)
+        if args.offset != "0":      # aperture images: show the local contrast, vignetting removed
+            lg = np.log(np.maximum(g, 1e-3))
+            img = np.clip((lg - gaussian_filter(lg, 30)) / 0.06 * 255 + 128, 0, 255).astype(np.uint8)
+        else:
+            img = np.clip((g - lo) / (hi - lo) * 255, 0, 255).astype(np.uint8)
         return xr, xs, x_eff, nover, img
 
     movie = None
@@ -393,7 +526,8 @@ def wall_from_tiffs():
                                   if np.isfinite(r).sum() > 2 else np.nan for r in xw_sub]))
     np.savez_compressed(out("tiff_extra.npz"), drift=drift, drift_smooth=drift_s, arrival=ta, swept=M,
              defects=holes, contrast=c, x_wall=xw, x_wall_sub=xw_sub, x_eff=xe, theta_deg=theta,
-             n_overhang_rows=nover, rows=np.arange(y0, y1), crop_right=xc)
+             n_overhang_rows=nover, rows=np.arange(y0, y1), crop_right=xc,
+             crop_left=args.crop_left)
 
     # QC figures
     fig, ax = plt.subplots(1, 3, figsize=(18, 5))
@@ -431,11 +565,13 @@ def wall_from_tiffs():
     h = median_filter(r.astype(float), size=(1, args.median_x), mode="nearest")
     h_sub = median_filter(Wc - 1 - (xe + (xw_sub - xw)), size=(1, args.median_x), mode="nearest")
     extra = dict(source="tiff", tiff_dir=os.path.abspath(args.video), crop_right=xc,
+                 crop_left=args.crop_left,
                  rows_used=[y0, y1], drift_max_px=np.abs(drift).max(0).round(2).tolist(),
                  contrast_threshold=float(thr_c), n_defect_px=int(holes.sum()),
                  frac_rows_front_ne_area=float((xw != xe).mean()),
                  tilt_deg_first_last=[float(theta[0]), float(theta[-1])],
-                 overhang_rows_mean=float(nover.mean()), nref=args.nref,
+                 overhang_rows_mean=float(nover.mean()), nref=args.nref, offset=args.offset, flatfield=args.flatfield,
+                 init_wall=bool(args.init_wall), rows_option=args.rows,
                  geometry="dark domain on the left, wall moving to +x; h = W-1-x_eff (switched "
                           "area per row), "
                           "columns of h = image rows y0..y1-1 (registered to frame 0)")
@@ -444,7 +580,12 @@ def wall_from_tiffs():
         idx = np.unique(np.linspace(t0, t1 - 1, 6).round().astype(int))
         fig, axes = plt.subplots(2, 3, figsize=(18, 11))
         for ax, i in zip(axes.flat, idx):
-            ax.imshow(norm(reg(i)), cmap="gray", vmin=lo, vmax=hi, extent=(0, Wc, y1, y0))
+            g = norm(reg(i))[rs]
+            if args.offset != "0":
+                lg = np.log(np.maximum(g, 1e-3))
+                ax.imshow(lg - gaussian_filter(lg, 30), cmap="gray", vmin=-0.03, vmax=0.03, extent=(0, Wc, y1, y0))
+            else:
+                ax.imshow(g, cmap="gray", vmin=lo, vmax=hi, extent=(0, Wc, y1, y0))
             ax.plot(xw_sub[i], np.arange(y0, y1), "r-", lw=0.8)
             ax.set_title(f"frame {i} (t = {i / fps / 3600:.2f} h), registered", fontsize=9)
         fig.tight_layout(); fig.savefig(out("fig_qc_overlay.png"), dpi=100); plt.close(fig)
