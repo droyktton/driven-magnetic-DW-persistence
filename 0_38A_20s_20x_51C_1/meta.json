@@ -1,0 +1,44 @@
+{
+  "fps": 0.05,
+  "um_per_px": 0.1175,
+  "n_frames_video": 1800,
+  "frame_first": 0,
+  "frame_last": 1799,
+  "height": 1055,
+  "width": 868,
+  "source": "tiff",
+  "tiff_dir": "/home/koltona/MOKEdata_local/2Nov15/0_38A_20s_20x_51C_1/Pos0",
+  "crop_right": 1055,
+  "crop_left": 0,
+  "rows_used": [
+    12,
+    880
+  ],
+  "drift_max_px": [
+    41.70000076293945,
+    11.699999809265137
+  ],
+  "contrast_threshold": 0.03385395041097405,
+  "n_defect_px": 1,
+  "frac_rows_front_ne_area": 0.00904825908858167,
+  "tilt_deg_first_last": [
+    -18.53432739650914,
+    -17.166064472977784
+  ],
+  "overhang_rows_mean": 7.265,
+  "nref": 5,
+  "offset": "0",
+  "flatfield": 2,
+  "init_wall": false,
+  "rows_option": [
+    0,
+    880
+  ],
+  "geometry": "dark domain on the left, wall moving to +x; h = W-1-x_eff (switched area per row), columns of h = image rows y0..y1-1 (registered to frame 0)",
+  "median_x": 5,
+  "edge_margin": 2,
+  "frac_retreat": 0.0,
+  "warnings": [
+    "the mean <h> moves backward in 714 steps"
+  ]
+}

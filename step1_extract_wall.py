@@ -118,6 +118,11 @@ tg.add_argument("--trim-y", type=int, default=12,
                 help="rows discarded at the top and bottom, on top of the maximum vertical drift")
 tg.add_argument("--qc-every", type=int, default=50, help="write qc/overlay_NNNN.png every N frames")
 tg.add_argument("--no-movie", action="store_true", help="do not write qc/overlay.mp4")
+tg.add_argument("--swept-thr", type=float, default=None,
+                help="threshold of the switching contrast (B-D)/B for the swept area (default: Otsu); for runs "
+                     "where the swept band is so faint that the halos of the defects set the Otsu threshold")
+tg.add_argument("--reuse-drift", action="store_true",
+                help="reuse the frame registration saved by an earlier run (DIR/drift_raw.npy)")
 tg.add_argument("--workers", type=int, default=4, help="threads for reading/processing frames")
 args = ap.parse_args()
 
@@ -283,6 +288,18 @@ def auto_crop_right(files):
     return W if low.size == 0 else int(W // 2 + low[0] - 20)
 
 
+def swept_threshold(c):
+    """Otsu threshold of the switching contrast. The swept band is a minority of the field but not a
+    speck; if Otsu marks more than half of it or less than 1 % (outliers such as the halos of defects
+    that moved with a large drift dominate), redo it on the contrast clipped to its 1-99.5 percentiles."""
+    c = np.ravel(c)
+    t = threshold_otsu(c)
+    if not 0.01 <= (c > t).mean() <= 0.5:
+        lo, hi = np.percentile(c, [1, 99.5])
+        t = threshold_otsu(np.clip(c, lo, hi))
+    return t
+
+
 def wall_from_tiffs():
     from skimage.registration import phase_cross_correlation
     files = tiff_files(args.video)
@@ -298,9 +315,16 @@ def wall_from_tiffs():
           f"(dt={1 / fps:g} s)  crop right at x={xc}, left at x={args.crop_left}")
 
     # 1. drift vs frame 0, smoothed in time (it is a slow mechanical drift)
-    ref = highpass(read_tiff(files[0]))[:, :xc]
-    drift = np.array(list(pmap(lambda f: phase_cross_correlation(
-        ref, highpass(read_tiff(f))[:, :xc], upsample_factor=10, normalization=None)[0], files)))
+    cache = out("drift_raw.npy")
+    if args.reuse_drift and os.path.exists(cache) and np.load(cache).shape == (T, 2):
+        drift = np.load(cache)
+        print(f"drift: reused {cache}")
+    else:
+        ref = highpass(read_tiff(files[0]))[:, :xc]
+        drift = np.array(list(pmap(lambda f: phase_cross_correlation(
+            ref, highpass(read_tiff(f))[:, :xc], upsample_factor=10, normalization=None)[0], files)))
+        os.makedirs(outdir, exist_ok=True)
+        np.save(cache, drift)
     drift_s = gaussian_filter1d(drift, 3, axis=0, mode="nearest")
     print(f"drift: dy {drift[:, 0].min():+.1f}..{drift[:, 0].max():+.1f} px, "
           f"dx {drift[:, 1].min():+.1f}..{drift[:, 1].max():+.1f} px; "
@@ -366,7 +390,7 @@ def wall_from_tiffs():
     inside = binary_erosion(binary_fill_holes(B0 > 0.5 * np.median(B0)), iterations=30, border_value=1) \
         if args.offset != "0" else np.ones(B0.shape, bool)
     c0[~inside] = 0
-    R = ~binary_dilation(c0 > threshold_otsu(c0), iterations=10) & (B0 > 0.6 * np.median(B0))
+    R = ~binary_dilation(c0 > swept_threshold(c0), iterations=10) & (B0 > 0.6 * np.median(B0))
     norm = lambda g: g / np.median(g[R])
     if args.flatfield > 0:
         # smooth illumination change vs the first frames, P_k(x, y) = poly in log(g / F), fitted on the
@@ -398,7 +422,7 @@ def wall_from_tiffs():
             Dt = np.mean([norm(g) for g in last], 0)
             ct = (Bt - Dt) / Bt
             ct[~inside] = 0
-            R = ~binary_dilation(ct > threshold_otsu(ct[inside]), iterations=10) & (B0 > 0.6 * np.median(B0))
+            R = ~binary_dilation(ct > swept_threshold(ct[inside]), iterations=10) & (B0 > 0.6 * np.median(B0))
             if (R & inside).sum() < 0.3 * inside.sum():     # noisy contrast: keep the robust fit on all pixels
                 print(f"  flat-field: never-switching region only {(R & inside).sum() / inside.sum():.0%} of the "
                       f"aperture, using the whole aperture (robust fit)")
@@ -408,7 +432,7 @@ def wall_from_tiffs():
     del first, last
     c = (B - Dk) / B
     c[~inside] = 0
-    thr_c = threshold_otsu(c[inside])
+    thr_c = args.swept_thr if args.swept_thr else swept_threshold(c[inside])
     M = c > thr_c                                     # pixels swept during the movie
     if init_path is not None:
         # parts of the band where the wall moved little have weaker contrast: hysteresis threshold
@@ -571,7 +595,7 @@ def wall_from_tiffs():
                  frac_rows_front_ne_area=float((xw != xe).mean()),
                  tilt_deg_first_last=[float(theta[0]), float(theta[-1])],
                  overhang_rows_mean=float(nover.mean()), nref=args.nref, offset=args.offset, flatfield=args.flatfield,
-                 init_wall=bool(args.init_wall), rows_option=args.rows,
+                 init_wall=bool(args.init_wall), rows_option=args.rows, swept_thr=args.swept_thr,
                  geometry="dark domain on the left, wall moving to +x; h = W-1-x_eff (switched "
                           "area per row), "
                           "columns of h = image rows y0..y1-1 (registered to frame 0)")

@@ -3,3 +3,4 @@ frames/
 *.mp4
 __pycache__/
 */contours.npz
+*/drift_raw.npy

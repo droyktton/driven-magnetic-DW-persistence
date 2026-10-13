@@ -80,6 +80,14 @@ Base plane θ0 = 18.7°, 593 rows (70 µm), 360 frames; overhangs 4.0 % of row-f
 - **Wavelets:** no usable scale (kept fraction ≤ 0.77), no ζ reported.
 - **Height distribution:** width 1.37 µm, skewness −0.14 ± 0.10, excess kurtosis −0.4 ± 0.3.
 
+## qEW or qKPZ below l₀
+
+`step10_universality.py` (`fig_universality.png`); all studies compared in [UNIVERSALITY.md](../UNIVERSALITY.md).
+
+- **A.** ζ over [4 µm, l₀ = 10 µm], folds excluded: 0.92 (0.88–0.95); u_area 1.03. Broken power law ζ₁ = 1.09 (folds excluded); on the full contour the models are not distinguished (χ² 15 / 12). Folds excluded: χ² qEW / qKPZ = 17 / 161. The range is short (factor 2.5).
+- **B.** The wall is slow (7.8 µm in 11 h). Λ scatters around 0 (contour median 0.10, h(x) −0.12), with a few poorly determined points down to −2.5. R ≤ 0.06.
+- **Conclusion:** compatible with qEW (weak case).
+
 ## Comparison of the field series (Studies 3 and 4)
 
 | | Study 3 (0.48 A) | Study 4 (0.50 A) | Study 2 (0.8 A, 2015, other conditions) |

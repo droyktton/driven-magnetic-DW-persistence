@@ -36,6 +36,14 @@ python step3_eps_sweep.py magnetic_fliped
 
 **Interpretation.** Following Kolton, Ferrero & Rosso, *Depinning free of the elastic approximation*, [arXiv:2306.13415](https://arxiv.org/abs/2306.13415) (2023), a wall is qEW-like (ζ ≈ 1.2) below a crossover length l₀ that decreases with the disorder strength, with ζ_eff ≈ 0.5 above it. A fit of the crossover (`step8_crossover.py`, `fig_crossover.png`; method in the Study 2 report) gives **l₀ ≈ 28 µm** from the local width (variants 4–36 µm), 22 µm from the global S(q) (14–30 µm) and 14 µm from the local slope; the sd of the local tilt falls to half its plateau at 31 µm. This is the same l₀ as in Study 2 (~10–30 µm) within errors, so the small local tilts of Study 1 do not translate into a measurably larger l₀. h is single-valued by construction in this study, so folds cannot appear. See the Study 2 report for the comparison table.
 
+## qEW or qKPZ below l₀
+
+`step10_universality.py` (`fig_universality.png`); all studies compared in [UNIVERSALITY.md](../UNIVERSALITY.md).
+
+- **A.** ζ over [4 µm, l₀ = 28 µm] = 1.05 (1.03–1.07). Broken power law ζ₁ = 1.05. χ² qEW / qKPZ = 27 / 756.
+- **B.** From h(x, t) only (video study, no arrival map): Λ = −0.2 … 0.3, i.e. ≈ 0, and R ≤ 0.01. The local slopes are small (⟨m²⟩ ≈ 0.05–0.13), so the test has little leverage. Λ ≈ 0 is the value of an elastic line driven along h.
+- Compatible with qEW; no sign of qKPZ.
+
 ## Discussion and outlook
 
 ### Measuring τ\* needs better time resolution

@@ -341,6 +341,15 @@ Also from `step7_roughness.py` (`fig_height_distribution.png`, `height_distribut
 - **Windows of 20 µm:** close to Gaussian, with a small but significant **negative skewness** (−0.28 ± 0.05): more parts of the wall lag behind the local mean than run ahead of it, as expected for a wall held back locally by pinning while the rest advances.
 - **Windows of 5 µm:** fat tails (excess kurtosis +7). They grow strongly with u_front and u_back (+16 and +26), so they come mostly from the overhangs and from steps at the scale of the resolution (σ = 0.5 µm ≈ 4 px here); they should not be read as a property of the elastic line.
 
+## qEW or qKPZ below l₀
+
+`step10_universality.py` (`fig_universality.png`); all studies compared in [UNIVERSALITY.md](../UNIVERSALITY.md).
+
+- **A.** ζ over [4 µm, l₀], folds excluded: 1.06 (1.01–1.10); 1.15–1.21 up to the smaller l₀ of the global S(q). Broken power law ζ₁ = 1.06–1.21 (contour, folds excluded, u_area). χ² qEW / qKPZ = 12–34 / 260–1050.
+- **B.** Normal velocity vs orientation, segments of 2–16 µm: Λ = 0.6–1.2 on the contour (defects masked), 0.3–0.8 without the mask, 0.3–0.7 from h(x). R ≤ 0.17. Λ ≈ 1 is the isotropic value: the wall moves along its normal with a speed that does not depend on its orientation.
+- **Preliminary check:** the prototype on x_eff segments gave v_n flat within ±10 % for |φ| ≲ 40°.
+- **Conclusion:** qEW below l₀; the KPZ term is only geometric and changes the velocity by ≤ 17 % at these scales.
+
 ## Next steps
 
 - Map the per-row mean persistence m_i (and mean velocity per row) against the defect positions: the static heterogeneity removed by the row-mean subtraction is itself a measure of the pinning landscape.

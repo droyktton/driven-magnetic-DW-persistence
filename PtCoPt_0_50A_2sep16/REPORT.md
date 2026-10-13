@@ -96,6 +96,14 @@ As in Study 2, P(S) is dominated by its cutoff (S_cut only 2–4× the smallest 
 - **Wavelets** (`step9`, `fig_wavelet.png`): no scale passes the criteria (kept fraction < 0.92 at all scales), so no wavelet ζ is reported, as in Study 2. The raw local slopes of F(a) are 1.0–1.5.
 - **Height distribution:** width 2.05 µm, skewness −0.35 ± 0.16, excess kurtosis −0.2 ± 0.4 (close to Gaussian).
 
+## qEW or qKPZ below l₀
+
+`step10_universality.py` (`fig_universality.png`); all studies compared in [UNIVERSALITY.md](../UNIVERSALITY.md).
+
+- **A.** ζ over [4 µm, l₀ = 15.5 µm], folds excluded: 1.11 (1.06–1.15). Broken power law ζ₁ = 1.38–1.51 (wide CI). χ² qEW / qKPZ = 6–9 / 72–176.
+- **B.** Λ = 0.2–1.4 (contour median 0.80, h(x) median 0.95), R ≤ 0.13.
+- **Conclusion:** qEW.
+
 ## Caveats
 
 - Not run yet: `step6_pinning_tests.py` (masks around the defects) and the integer-h cross-check.
