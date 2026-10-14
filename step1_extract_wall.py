@@ -86,7 +86,7 @@ ap.add_argument("--edge-margin", type=int, default=2,
                      "many px away from the top and bottom edges")
 ap.add_argument("--retreat-px", type=float, default=1.0,
                 help="a Delta h(tau=1) larger than this counts as a real retreat")
-tg = ap.add_argument_group("TIFF folder input (--roi/--rotate/--flipud/--fliplr/--invert/--sigma-y are ignored)")
+tg = ap.add_argument_group("TIFF folder input (--roi/--flipud/--fliplr/--invert/--sigma-y are ignored; --rotate is applied)")
 tg.add_argument("--crop-right", default="auto",
                 help="keep columns x < N (camera coordinates); auto = where the illumination of the "
                      "field of view drops below 90%% of its plateau, minus 20 px")
@@ -121,6 +121,9 @@ tg.add_argument("--no-movie", action="store_true", help="do not write qc/overlay
 tg.add_argument("--swept-thr", type=float, default=None,
                 help="threshold of the switching contrast (B-D)/B for the swept area (default: Otsu); for runs "
                      "where the swept band is so faint that the halos of the defects set the Otsu threshold")
+tg.add_argument("--bright-domain", action="store_true",
+                help="the growing domain is the bright one (after --rotate it must still be on the left): the "
+                     "switching contrast and the initial-wall gradient change sign")
 tg.add_argument("--reuse-drift", action="store_true",
                 help="reuse the frame registration saved by an earlier run (DIR/drift_raw.npy)")
 tg.add_argument("--workers", type=int, default=4, help="threads for reading/processing frames")
@@ -270,8 +273,10 @@ def read_tiff(f):
     im = im[..., :3].mean(-1) if im.ndim == 3 else im
     if args.offset == "auto":
         c = 40
-        return im - np.median(np.concatenate([im[:c, :c], im[:c, -c:], im[-c:, :c], im[-c:, -c:]]))
-    return im - float(args.offset)
+        im = im - np.median(np.concatenate([im[:c, :c], im[:c, -c:], im[-c:, :c], im[-c:, -c:]]))
+    else:
+        im = im - float(args.offset)
+    return np.rot90(im, args.rotate) if args.rotate % 4 else im
 
 
 def highpass(a):
@@ -302,6 +307,7 @@ def swept_threshold(c):
 
 def wall_from_tiffs():
     from skimage.registration import phase_cross_correlation
+    sgn = -1.0 if args.bright_domain else 1.0      # sign of the switching contrast (B - D)/B
     files = tiff_files(args.video)
     if len(files) < 10:
         raise SystemExit(f"ERROR: only {len(files)} TIFF files in {args.video}")
@@ -345,7 +351,7 @@ def wall_from_tiffs():
         # between rows (dynamic programming); defects are strong but short, so the cost is clipped
         F = np.mean([reg(k) for k in range(args.nref)], 0)
         ins0 = binary_erosion(binary_fill_holes(F > 0.5 * np.median(F)), iterations=30, border_value=1)
-        gx = gaussian_filter1d(gaussian_filter(np.log(np.maximum(F, 1e-3)), [4, 2]), 2, axis=1, order=1)
+        gx = sgn * gaussian_filter1d(gaussian_filter(np.log(np.maximum(F, 1e-3)), [4, 2]), 2, axis=1, order=1)
         z = np.where(ins0, gx / (1.48 * np.median(np.abs(gx[ins0]))), 0)
         cost = -np.clip(z, -3, 6)
         Hh, Ww = cost.shape
@@ -384,7 +390,7 @@ def wall_from_tiffs():
     last = [reg(k) for k in range(T - args.nref, T)]
     B0 = np.mean([g / np.median(g) for g in first], 0)
     D0 = np.mean([g / np.median(g) for g in last], 0)
-    c0 = (B0 - D0) / B0
+    c0 = sgn * (B0 - D0) / B0
     # inside the illuminated aperture, away from its edge (the aperture is fixed on the camera, so its
     # edge moves in the registered frames); only with --offset (aperture images); otherwise the whole frame
     inside = binary_erosion(binary_fill_holes(B0 > 0.5 * np.median(B0)), iterations=30, border_value=1) \
@@ -420,7 +426,7 @@ def wall_from_tiffs():
             norm = make_norm(R if _ else inside)
             Bt = np.mean([norm(g) for g in first], 0)
             Dt = np.mean([norm(g) for g in last], 0)
-            ct = (Bt - Dt) / Bt
+            ct = sgn * (Bt - Dt) / Bt
             ct[~inside] = 0
             R = ~binary_dilation(ct > swept_threshold(ct[inside]), iterations=10) & (B0 > 0.6 * np.median(B0))
             if (R & inside).sum() < 0.3 * inside.sum():     # noisy contrast: keep the robust fit on all pixels
@@ -430,7 +436,7 @@ def wall_from_tiffs():
     B = np.mean([norm(g) for g in first], 0)
     Dk = np.mean([norm(g) for g in last], 0)
     del first, last
-    c = (B - Dk) / B
+    c = sgn * (B - Dk) / B
     c[~inside] = 0
     thr_c = args.swept_thr if args.swept_thr else swept_threshold(c[inside])
     M = c > thr_c                                     # pixels swept during the movie
@@ -464,6 +470,9 @@ def wall_from_tiffs():
         # every swept patch that touches the initial wall is wall motion, not only the largest one
         near = np.abs(np.arange(M.shape[1])[None, :] - init_path[:, None]) <= 3
         main = np.isin(lab, np.setdiff1d(np.unique(lab[near]), [0]))
+        # the domain only grows: what is left of the initial wall (minus a margin) cannot switch again,
+        # even if a drift of the illumination gives it some contrast
+        main &= np.arange(M.shape[1])[None, :] >= init_path[:, None] - 3
     lab, _ = label(~main)
     left = np.isin(lab, edge_ids(lab[:, 0]))
     holes &= main
@@ -595,7 +604,7 @@ def wall_from_tiffs():
                  frac_rows_front_ne_area=float((xw != xe).mean()),
                  tilt_deg_first_last=[float(theta[0]), float(theta[-1])],
                  overhang_rows_mean=float(nover.mean()), nref=args.nref, offset=args.offset, flatfield=args.flatfield,
-                 init_wall=bool(args.init_wall), rows_option=args.rows, swept_thr=args.swept_thr,
+                 init_wall=bool(args.init_wall), rows_option=args.rows, swept_thr=args.swept_thr, bright_domain=bool(args.bright_domain),
                  geometry="dark domain on the left, wall moving to +x; h = W-1-x_eff (switched "
                           "area per row), "
                           "columns of h = image rows y0..y1-1 (registered to frame 0)")

@@ -19,6 +19,8 @@ Each data set is a separate study with its own folder and report:
 | 5 | `0_36A_20s_20x_51C_2_1/`: same sample and field of view as Study 2 (thesis of M. Grassi), 0.36 A = 20.7 Oe at 51 °C, 1800 frames, Δt = 20 s | [`0_36A_20s_20x_51C_2_1/REPORT.md`](0_36A_20s_20x_51C_2_1/REPORT.md) |
 | 6 | `0_38A_20s_20x_51C_1/`: as Study 5, 0.38 A = 21.9 Oe at 51 °C | [`0_38A_20s_20x_51C_1/REPORT.md`](0_38A_20s_20x_51C_1/REPORT.md) |
 | 7 | `0_42A_20s_20x_52C_1/`: as Study 5, 0.42 A = 24.2 Oe at 52 °C | [`0_42A_20s_20x_52C_1/REPORT.md`](0_42A_20s_20x_52C_1/REPORT.md) |
+| 8 | `P7925_0_04A_24jun16/`: sample P7925, 0.04 A, 6000 TIFF frames, Δt ≈ 9.5 s (15.9 h), scale 0.1175 µm/px assumed, horizontal wall (`--rotate 3 --bright-domain`) | [`P7925_0_04A_24jun16/REPORT.md`](P7925_0_04A_24jun16/REPORT.md) |
+| 9 | `P7925_0_04A_26jun16/`: same sample and drive, two days later, 6000 frames, Δt ≈ 7.8 s (13 h) | [`P7925_0_04A_26jun16/REPORT.md`](P7925_0_04A_26jun16/REPORT.md) |
 
 Cross-study question, qEW or qKPZ below the crossover length l₀: [`UNIVERSALITY.md`](UNIVERSALITY.md).
 
@@ -113,6 +115,9 @@ When the argument is a folder, step 1 reads its `*.tif` frames in numeric order 
 - `--flatfield N` corrects an illumination profile that changes during the run: in each frame, a 2D polynomial of order N in log(I/F), with F the mean of the first frames, is fitted to the never-switching pixels (robust refit, residuals beyond 3 MAD excluded) and divided out. If the never-switching region is too small, the whole aperture is used with the robust fit.
 - `--crop-left N` discards the columns x < N of the registered frame (e.g. a vignetted aperture edge).
 - `--init-wall` locates the initial wall directly as the dark-to-bright step: a dynamic-programming path through the rows that maximises the gradient d/dx log I of the first frames (|Δx| ≤ 3 px between rows, gradient clipped so that short defects do not capture it). Everything left of it is the initial domain, and every swept patch that touches it counts as wall motion (hysteresis threshold for the swept area). Needed where parts of the wall never move during the run: there the swept area has no pixels, and the method above cannot place the wall. Only the longest run of rows where the path is inside the aperture, on a real step, and with `--init-room` px (default 150) of aperture to its right is kept.
+- `--init-wall` also fixes the initial domain: pixels left of the path (minus 3 px) are never counted as switched, even where the hysteresis threshold would leak into them (Study 9).
+- `--rotate K` also applies to TIFF input (K × 90° counter-clockwise, after the offset subtraction), for walls that are horizontal in the camera (Studies 8 and 9). The drift saved for `--reuse-drift` is in the rotated frame.
+- `--bright-domain`: the growing domain is the bright one (the sign of the switching contrast is reversed).
 - `--rows Y0 Y1` restricts the output to the image rows Y0 ≤ y < Y1 of the registered frame (the y axis of the QC figures). The segmentation itself still uses all rows; use it to drop parts of the wall that run along defects or the aperture edge.
 - `--swept-thr X` sets the threshold of the switching contrast (B − D)/B for the swept area by hand. By default it is Otsu's threshold; when Otsu marks more than half of the field or less than 1 % of it (with a large drift, the halos of the moved defects can dominate the histogram), it is recomputed on the contrast clipped to its 1–99.5 percentiles. Use `--swept-thr` when the swept band is fainter than the defect halos even then (Study 5).
 - `--reuse-drift` reuses the frame registration saved by an earlier run in `DIR/drift_raw.npy` (the slowest part), to iterate on the other options.
