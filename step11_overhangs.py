@@ -41,9 +41,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.lib.stride_tricks import sliding_window_view
-
-from wall_tools import contour_points
+from wall_tools import contour_points, overhang_segments
 
 ap = argparse.ArgumentParser()
 ap.add_argument("dirs", nargs="*", help="study folders")
@@ -52,28 +50,6 @@ ap.add_argument("--n-boot", type=int, default=300, help="bootstrap resamples")
 ap.add_argument("--selftest", action="store_true", help="synthetic walls with and without overhangs")
 args = ap.parse_args()
 TOLS = sorted({2.0, args.tol, 5.0})
-
-
-def segments(y, x, lams, step, tols):
-    """Per arc length lambda: number of windows, number with overhang (per tol), extents along own axis."""
-    n_tot, n_ov, ext = [], {t: [] for t in tols}, []
-    for lam in lams:
-        n = int(round(lam / step)) + 1
-        if y.size < n:
-            n_tot.append(0); ext.append(np.empty(0)); [n_ov[t].append(0) for t in tols]; continue
-        hop = max(n // 2, 1)
-        Y = sliding_window_view(y, n)[::hop]; X = sliding_window_view(x, n)[::hop]
-        my, mx = Y.mean(1, keepdims=True), X.mean(1, keepdims=True)
-        dy, dx = Y - my, X - mx
-        cyy, cxx, cxy = (dy * dy).mean(1), (dx * dx).mean(1), (dy * dx).mean(1)
-        al = 0.5 * np.arctan2(2 * cxy, cyy - cxx)                  # major axis, from y towards x
-        p = dy * np.cos(al)[:, None] + dx * np.sin(al)[:, None]
-        p *= np.where(p[:, -1] >= p[:, 0], 1.0, -1.0)[:, None]
-        back = (np.maximum.accumulate(p, axis=1) - p).max(1)
-        n_tot.append(p.shape[0]); ext.append(p.max(1) - p.min(1))
-        for t in tols:
-            n_ov[t].append(int((back > t).sum()))
-    return np.array(n_tot), {t: np.array(v) for t, v in n_ov.items()}, ext
 
 
 def base_events(y, x, theta0_deg, tol):
@@ -103,7 +79,7 @@ def analyse(conts, theta0, step, lams):
     """conts: list of (y, x) per frame. Returns per-frame counts and extents."""
     NT, NO, EX, EV, PL = [], {t: [] for t in TOLS}, [[] for _ in lams], [], []
     for y, x in conts:
-        nt, no, ex = segments(y, x, lams, step, TOLS)
+        nt, no, ex, _ = overhang_segments(y, x, lams, step, TOLS)
         NT.append(nt)
         for t in TOLS:
             NO[t].append(no[t])

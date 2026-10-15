@@ -1,8 +1,9 @@
 """Shared helpers for the roughness steps (step7_roughness.py, step8_crossover.py): detrending,
 structure factor, height differences, local width, log binning and power-law fits, rotation onto the
-base plane, subpixel contour, local width with local rotation (PCA per segment) and spectra of
-rotated segments. See step7_roughness.py for the definitions of the observables."""
+base plane, subpixel contour, local width with local rotation (PCA per segment), spectra of
+rotated segments and overhangs of arc windows (step11). See step7_roughness.py for the definitions of the observables."""
 import numpy as np
+from numpy.lib.stride_tricks import sliding_window_view
 from scipy.ndimage import rotate
 
 
@@ -238,3 +239,29 @@ def zeta_band(qc, S, lo, hi):
     return -(fit_power(qc, S, lo, hi)[0] + 1) / 2
 
 
+
+
+def overhang_segments(y, x, lams, step, tols):
+    """Windows of arc length lambda along an ordered contour (sliding by lambda/2), each rotated to its own
+    principal axis. Per lambda: number of windows, number with an overhang (projection on the own axis goes
+    back by more than tol px; per tol), extents along the own axis, and w2 (variance normal to the axis)."""
+    n_tot, n_ov, ext, w2 = [], {t: [] for t in tols}, [], []
+    for lam in lams:
+        n = int(round(lam / step)) + 1
+        if y.size < n:
+            n_tot.append(0); ext.append(np.empty(0)); w2.append(np.empty(0)); [n_ov[t].append(0) for t in tols]
+            continue
+        hop = max(n // 2, 1)
+        Y = sliding_window_view(y, n)[::hop]; X = sliding_window_view(x, n)[::hop]
+        my, mx = Y.mean(1, keepdims=True), X.mean(1, keepdims=True)
+        dy, dx = Y - my, X - mx
+        cyy, cxx, cxy = (dy * dy).mean(1), (dx * dx).mean(1), (dy * dx).mean(1)
+        al = 0.5 * np.arctan2(2 * cxy, cyy - cxx)                  # major axis, from y towards x
+        p = dy * np.cos(al)[:, None] + dx * np.sin(al)[:, None]
+        p *= np.where(p[:, -1] >= p[:, 0], 1.0, -1.0)[:, None]
+        back = (np.maximum.accumulate(p, axis=1) - p).max(1)
+        n_tot.append(p.shape[0]); ext.append(p.max(1) - p.min(1))
+        w2.append(np.clip((cyy + cxx) / 2 - np.sqrt(((cyy - cxx) / 2) ** 2 + cxy ** 2), 0, None))
+        for t in tols:
+            n_ov[t].append(int((back > t).sum()))
+    return np.array(n_tot), {t: np.array(v) for t, v in n_ov.items()}, ext, w2
