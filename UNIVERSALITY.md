@@ -1,6 +1,6 @@
 # qEW or qKPZ below the crossover length l₀?
 
-Summary of `step10_universality.py` over all ten studies, 2026-10-13; Studies 8 and 9 added 2026-10-14, Study 10 (GdFeCo) 2026-10-15. Definitions and options are in the [README](README.md) (step 10).
+Summary of `step10_universality.py` over all eleven studies, 2026-10-13; Studies 8 and 9 added 2026-10-14, Studies 10 (GdFeCo) and 11 2026-10-15. Definitions and options are in the [README](README.md) (step 10).
 
 ## Question
 In d = 2 a driven domain wall has several regimes of scale. At the smallest scales the regime is non-universal; the Larkin regime would follow, but here it is below the optical resolution. Between that and the crossover length l₀, the creep avalanches are depinning-like. Above l₀, overhangs change the geometry and ζ_eff ≈ 0.5 (Kolton, Ferrero & Rosso, [arXiv:2306.13415](https://arxiv.org/abs/2306.13415); l₀ from `step8`).
@@ -49,6 +49,7 @@ Two independent tests are therefore used, both measured on the walls themselves.
 | 8 | P7925, 0.04 A (scale assumed) | 0.30 | 23 (14–23) | 1.06 (1.03–1.08) | 1.04 (0.99–1.11) | 412 / 2740 | 1.41 (0.26–1.66) | 0.83 (−0.45–1.04) | 0.25 |
 | 9 | same, two days later | 0.19 | 48 (29–48, poorly bounded) | 0.90 (0.89–0.91) | ≈ 1.0 (no break in the field) | 1161 / 3948 | 1.22 (0.73–1.99) | 0.60 (0.48–0.75) | 0.37 |
 | 10 | GdFeCo B1743, 600 mA (scale assumed) | 2.36 | 35 (18–35) | 1.17 (1.14–1.21) | 1.31 (1.26–1.37) | 13 / 1266 | 0.56 (0.10–2.57) | −0.02 (−1.48–0.36) | 0.24 |
+| 11 | P7925, 0.04 A, wall barely moves (scale assumed) | 0.15 | 26 (5–26, no clean break) | 0.77 (0.76–0.79) | 0.89 (no break in the field) | 1700 / 3714 | 0.65 (0.07–1.23) | 0.09 (−0.44–0.61) | 0.17 |
 
 Notes on the table:
 - **Errors:** 16–84 % block-bootstrap intervals.
@@ -84,7 +85,8 @@ Figures: `fig_universality.png` in each study; Studies 1–7 in `0_42A_20s_20x_5
    - ζ ≈ 1.0–1.2 below l₀ ≈ 18–35 µm, ζ₁ = 1.31 with the crossover fitted; χ² 13 (qEW) against 1266 (qKPZ).
    - Λ ≈ 0.1–0.75 for L = 2–8 µm, R ≤ 0.24. At L = 16 µm the contour gives Λ ≈ +2 and h(x) Λ ≈ −1.4: opposite signs on few segments, not a KPZ signal.
    - It is the fastest wall (2.4 nm/s), and still no Λ ≫ 1.
-5. **Conclusion.** Below l₀ the walls behave as qEW interfaces, with at most the geometric KPZ term of an isotropic medium (λ ∝ v). The qKPZ signatures are absent: no ζ ≈ 0.63, and no λ/v that grows as the creep velocity falls.
+5. **Study 11 is the exception: ζ ≈ 0.7.** Same sample and drive as Studies 8–9, but the wall advances only 3.7 µm in 6.9 h (mostly in one bulge), about the dynamical correlation length ξ ≈ 2–3 µm. At larger scales the shape is still that of the initial wall, not a driven steady state, and a wall prepared at rest is expected to be in the equilibrium regime (ζ = 2/3); ζ also drifts over the run (0.92 → 0.52). Λ = O(1) and R ≤ 0.17, as everywhere else, so test B gives no sign of qKPZ. Its roughness is not used for the decision.
+6. **Conclusion.** Below l₀ the walls behave as qEW interfaces, with at most the geometric KPZ term of an isotropic medium (λ ∝ v). The qKPZ signatures are absent: no ζ ≈ 0.63, and no λ/v that grows as the creep velocity falls.
 
 ## Which crossover: ξ_av or l₀? (step11, 2026-10-15)
 ζ ≈ 1/2 is expected both above l₀ (effective: the wall is multivalued) and above the creep avalanche scale ξ_av (genuine: the wall is single-valued, thermal regime). The break l× found by step8 is therefore min(ξ_av, l₀), and the exponent cannot tell which. `step11_overhangs.py` measures directly whether the wall is single-valued at each scale: P_ov(ℓ) is the fraction of contour segments of extent ℓ, each in its own frame, that go back by more than 3 px (README, step 11).
@@ -100,6 +102,7 @@ Figures: `fig_universality.png` in each study; Studies 1–7 in `0_42A_20s_20x_5
 | 8 | 23 | 0.01 | > 110 | 0.02 | 410 | break ≪ l₀^geom |
 | 9 | 48 | **0.40** | **58 (41–58)** * | 0.41 | 53 | **break ≈ overhang crossover** |
 | 10 | 35 | 0.18 | > 51 | 0.14 | 200 | break < l₀^geom |
+| 11 | 26 | 0.21 | 46 (44–59) | 0.33 | 72 | no clean break |
 
 \* reached only with windows longer than half the wall, where one large fold can dominate.
 

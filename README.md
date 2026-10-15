@@ -22,6 +22,7 @@ Each data set is a separate study with its own folder and report:
 | 8 | `P7925_0_04A_24jun16/`: sample P7925, 0.04 A, 6000 TIFF frames, Δt ≈ 9.5 s (15.9 h), scale 0.1175 µm/px assumed, horizontal wall (`--rotate 3 --bright-domain`) | [`P7925_0_04A_24jun16/REPORT.md`](P7925_0_04A_24jun16/REPORT.md) |
 | 9 | `P7925_0_04A_26jun16/`: same sample and drive, two days later, 6000 frames, Δt ≈ 7.8 s (13 h) | [`P7925_0_04A_26jun16/REPORT.md`](P7925_0_04A_26jun16/REPORT.md) |
 | 10 | `GdFeCo_B1743_600mA_16may17/`: ferrimagnetic GdFeCo (B1743, 10 nm), 600 mA, 10800 Micro-Manager TIFF frames, Δt = 2 s (6 h), scale 0.1175 µm/px assumed, wall moving to the right (`--bright-domain --crop-right 1200`) | [`GdFeCo_B1743_600mA_16may17/REPORT.md`](GdFeCo_B1743_600mA_16may17/REPORT.md) |
+| 11 | `P7925_0_04A_23jun16/`: sample P7925, 0.04 A (as Studies 8–9, one day earlier than 8), 3000 TIFF frames, Δt = 8.25 s (6.9 h), scale assumed; manual swept threshold and rows 130–979 (`--swept-thr 0.018 --rows 130 980`) | [`P7925_0_04A_23jun16/REPORT.md`](P7925_0_04A_23jun16/REPORT.md) |
 
 Cross-study question, qEW or qKPZ below the crossover length l₀: [`UNIVERSALITY.md`](UNIVERSALITY.md).
 
