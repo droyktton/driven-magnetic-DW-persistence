@@ -86,6 +86,30 @@ Figures: `fig_universality.png` in each study; Studies 1–7 in `0_42A_20s_20x_5
    - It is the fastest wall (2.4 nm/s), and still no Λ ≫ 1.
 5. **Conclusion.** Below l₀ the walls behave as qEW interfaces, with at most the geometric KPZ term of an isotropic medium (λ ∝ v). The qKPZ signatures are absent: no ζ ≈ 0.63, and no λ/v that grows as the creep velocity falls.
 
+## Which crossover: ξ_av or l₀? (step11, 2026-10-15)
+ζ ≈ 1/2 is expected both above l₀ (effective: the wall is multivalued) and above the creep avalanche scale ξ_av (genuine: the wall is single-valued, thermal regime). The break l× found by step8 is therefore min(ξ_av, l₀), and the exponent cannot tell which. `step11_overhangs.py` measures directly whether the wall is single-valued at each scale: P_ov(ℓ) is the fraction of contour segments of extent ℓ, each in its own frame, that go back by more than 3 px (README, step 11).
+
+| study | l× (step8, local width) [µm] | P_ov(l×) | l₀^geom: P_ov = 1/2 [µm] | P_ov at ½ wall | mean spacing of overhangs [µm] | reading |
+|---|---|---|---|---|---|---|
+| 5 | 80 | 0.02 | > 97 | 0.01 | 6300 | single-valued at all scales |
+| 6 | 13 | 0.04 | 68 (65–70) * | 0.21 | 160 | break ≪ l₀^geom |
+| 7 | 15 | 0.02 | > 66 | 0.04 | 500 | break ≪ l₀^geom |
+| 2 | 28 | **0.40** | **36 (31–42)** | 0.68 | 33 | **break = overhang crossover** |
+| 3 | 10 | 0.21 | 43 (39–46) | 0.39 | 31 | break 4× below l₀^geom |
+| 4 | 16 | 0.06 | > 78 | 0.13 | 150 | break ≪ l₀^geom |
+| 8 | 23 | 0.01 | > 110 | 0.02 | 410 | break ≪ l₀^geom |
+| 9 | 48 | **0.40** | **58 (41–58)** * | 0.41 | 53 | **break ≈ overhang crossover** |
+| 10 | 35 | 0.18 | > 51 | 0.14 | 200 | break < l₀^geom |
+
+\* reached only with windows longer than half the wall, where one large fold can dominate.
+
+- l₀^geom does not depend on the tolerance (2, 3 or 5 px change it by ≤ 15 %).
+- **Only in Studies 2 and 9** is the wall about half multivalued at the break (P_ov ≈ 0.4). These are, with Study 3, the runs where overhangs are common (one every 30–50 µm along the wall). There the break is the overhang crossover of Kolton, Ferrero & Rosso.
+- **In Studies 4–8 and 10** the wall is still single-valued at the break (P_ov ≤ 0.2, mostly ≤ 0.06), and overhangs are rare (one every 150–6000 µm). The break there is not l₀; l₀ lies above it, often beyond the field of view.
+- A break in a single-valued wall is what the avalanche scale ξ_av would produce (thermal regime, ζ = 1/2 above it). It is a candidate, not a proof. Other causes of a break in a single-valued wall: the macroscopic shape of the wall in the field of view (curvature set by the nucleation and the aperture), and the limited range of ℓ near the wall length.
+- Studies 5–7 (same sample and T): l× = 80, 13, 15 µm at 20.7, 21.9, 24.2 Oe, all on single-valued walls. If l× is ξ_av, it falls with the field, the expected direction, but much more steeply than L_opt ∝ H^−3/4. The test that would settle it is several fields at fixed T in the same region of the film.
+- **The qEW/qKPZ tests are not affected.** The window [4 µm, l×] is depinning-like whichever crossover closes it, and in most studies the wall is single-valued in the whole window.
+
 ## Caveats
 - **v_n(φ) is noisy for the slowest walls.** In Studies 3 and 6 the wall moves ~4–8 µm in 10–11 h, so v_n(φ) rests on few switching events. Some Λ values there are negative (velocity falling faster than cos φ with the tilt), with wide errors.
 - **Pinned segments.** Segments pinned at defects are tilted and slow. With the defect mask Λ changes by ~0.1–0.6 (Study 2: 0.6–1.2 masked vs 0.3–0.8 unmasked) but stays O(1).
@@ -93,4 +117,4 @@ Figures: `fig_universality.png` in each study; Studies 1–7 in `0_42A_20s_20x_5
 - **Not used for the decision:**
   - test C, the avalanche shape (mean advance S/ℓ_y ∝ ℓ_y^0.3–0.7): the avalanches are slivers at the resolution;
   - test D, the skewness of the local heights (≈ −0.1 to −0.4 at 20 µm, lagging valleys): pinning tongues also produce it.
-- **l₀ differs between runs of the same sample:** ≈ 70 µm at 0.36 A against 10–30 µm in the others. Each run starts from a new wall in a slightly different region (Study 5 was recorded two weeks after Studies 6 and 7). If l₀ depends only on the disorder, this points to a variation of the disorder across the field of view.
+- **The step8 crossover differs between runs of the same sample:** ≈ 70–80 µm at 0.36 A against 10–30 µm in the others. step11 shows that in Studies 5–7 the wall is single-valued at all these breaks, so they are not l₀ (see above); a field-dependent ξ_av, or a different region of the film (Study 5 was recorded two weeks after Studies 6 and 7), are both possible.
