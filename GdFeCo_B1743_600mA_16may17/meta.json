@@ -1,0 +1,43 @@
+{
+  "fps": 0.5,
+  "um_per_px": 0.1175,
+  "n_frames_video": 10800,
+  "frame_first": 0,
+  "frame_last": 10799,
+  "height": 1200,
+  "width": 540,
+  "source": "tiff",
+  "tiff_dir": "/home/koltona/MOKEdata_local/GdFeCo_B1743_2017_05_16/Pos0",
+  "crop_right": 1200,
+  "crop_left": 0,
+  "rows_used": [
+    444,
+    984
+  ],
+  "drift_max_px": [
+    0.4000000059604645,
+    0.699999988079071
+  ],
+  "contrast_threshold": 0.08230949720310712,
+  "n_defect_px": 97,
+  "frac_rows_front_ne_area": 0.11034927983539095,
+  "tilt_deg_first_last": [
+    26.555054894489878,
+    6.999185386005584
+  ],
+  "overhang_rows_mean": 10.016481481481481,
+  "nref": 5,
+  "offset": "auto",
+  "flatfield": 2,
+  "init_wall": true,
+  "rows_option": null,
+  "swept_thr": null,
+  "bright_domain": true,
+  "geometry": "dark domain on the left, wall moving to +x; h = W-1-x_eff (switched area per row), columns of h = image rows y0..y1-1 (registered to frame 0)",
+  "median_x": 5,
+  "edge_margin": 2,
+  "frac_retreat": 0.0,
+  "warnings": [
+    "the mean <h> moves backward in 4032 steps"
+  ]
+}

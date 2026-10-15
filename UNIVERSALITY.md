@@ -1,6 +1,6 @@
 # qEW or qKPZ below the crossover length l₀?
 
-Summary of `step10_universality.py` over all nine studies, 2026-10-13; Studies 8 and 9 added 2026-10-14. Definitions and options are in the [README](README.md) (step 10).
+Summary of `step10_universality.py` over all ten studies, 2026-10-13; Studies 8 and 9 added 2026-10-14, Study 10 (GdFeCo) 2026-10-15. Definitions and options are in the [README](README.md) (step 10).
 
 ## Question
 In d = 2 a driven domain wall has several regimes of scale. At the smallest scales the regime is non-universal; the Larkin regime would follow, but here it is below the optical resolution. Between that and the crossover length l₀, the creep avalanches are depinning-like. Above l₀, overhangs change the geometry and ζ_eff ≈ 0.5 (Kolton, Ferrero & Rosso, [arXiv:2306.13415](https://arxiv.org/abs/2306.13415); l₀ from `step8`).
@@ -48,6 +48,7 @@ Two independent tests are therefore used, both measured on the walls themselves.
 | 1 | video (other sample region), 25 fps | — | 28 (14–28) | 1.05 (1.03–1.07) | 1.05 (1.03–1.08) | 27 / 756 | — | −0.05 (−0.21–0.28) | 0.01 |
 | 8 | P7925, 0.04 A (scale assumed) | 0.30 | 23 (14–23) | 1.06 (1.03–1.08) | 1.04 (0.99–1.11) | 412 / 2740 | 1.41 (0.26–1.66) | 0.83 (−0.45–1.04) | 0.25 |
 | 9 | same, two days later | 0.19 | 48 (29–48, poorly bounded) | 0.90 (0.89–0.91) | ≈ 1.0 (no break in the field) | 1161 / 3948 | 1.22 (0.73–1.99) | 0.60 (0.48–0.75) | 0.37 |
+| 10 | GdFeCo B1743, 600 mA (scale assumed) | 2.36 | 35 (18–35) | 1.17 (1.14–1.21) | 1.31 (1.26–1.37) | 13 / 1266 | 0.56 (0.10–2.57) | −0.02 (−1.48–0.36) | 0.24 |
 
 Notes on the table:
 - **Errors:** 16–84 % block-bootstrap intervals.
@@ -70,7 +71,7 @@ Figures: `fig_universality.png` in each study; Studies 1–7 in `0_42A_20s_20x_5
 2. **KPZ term.** Λ is of order one or smaller in every study (≈ 0–1.4): between the elastic (0) and the isotropic (1) values, never ≫ 1.
    - **R stays at ≤ 0.2–0.3:** at scales below l₀ the tilts change the velocity by at most 20–30 %. Even if λ were finite, the nonlinear term would be a perturbation on these scales.
    - **Λ does not grow as 1/v.** Fixed temperature and disorder (Studies 5, 7): v drops 4.4× from 0.42 A to 0.36 A, and Λ goes from ≈ 0.3–0.7 to ≈ 1.2. With a fixed λ (qKPZ) it would grow 4.4×.
-   - **Across all studies:** v spans a factor 13 (0.12–1.65 nm/s) and Λ stays O(1) without a trend that would point to λ/v diverging.
+   - **Across all studies:** v spans a factor 20 (0.12–2.36 nm/s, three samples) and Λ stays O(1) without a trend that would point to λ/v diverging.
    - The isotropic value Λ = 1 (normal growth, λ = v) is compatible within the spread.
 3. **Second sample (P7925, Studies 8 and 9).** Same picture as Pt/Co/Pt.
    - **Study 8:** ζ ≈ 1.05 below l₀ ≈ 14–23 µm, and Λ ≈ 1.
@@ -79,7 +80,11 @@ Figures: `fig_universality.png` in each study; Studies 1–7 in `0_42A_20s_20x_5
      - a linear term in v_n(φ) (b ≈ +0.3), i.e. a preferred direction of motion other than the mean normal;
      - but Λ is still O(1) and R ≤ 0.37.
    - The pixel size of these runs is not known. Exponents, Λ and R do not depend on it.
-4. **Conclusion.** Below l₀ the walls behave as qEW interfaces, with at most the geometric KPZ term of an isotropic medium (λ ∝ v). The qKPZ signatures are absent: no ζ ≈ 0.63, and no λ/v that grows as the creep velocity falls.
+4. **Third sample, ferrimagnetic GdFeCo (Study 10).** Same picture again.
+   - ζ ≈ 1.0–1.2 below l₀ ≈ 18–35 µm, ζ₁ = 1.31 with the crossover fitted; χ² 13 (qEW) against 1266 (qKPZ).
+   - Λ ≈ 0.1–0.75 for L = 2–8 µm, R ≤ 0.24. At L = 16 µm the contour gives Λ ≈ +2 and h(x) Λ ≈ −1.4: opposite signs on few segments, not a KPZ signal.
+   - It is the fastest wall (2.4 nm/s), and still no Λ ≫ 1.
+5. **Conclusion.** Below l₀ the walls behave as qEW interfaces, with at most the geometric KPZ term of an isotropic medium (λ ∝ v). The qKPZ signatures are absent: no ζ ≈ 0.63, and no λ/v that grows as the creep velocity falls.
 
 ## Caveats
 - **v_n(φ) is noisy for the slowest walls.** In Studies 3 and 6 the wall moves ~4–8 µm in 10–11 h, so v_n(φ) rests on few switching events. Some Λ values there are negative (velocity falling faster than cos φ with the tilt), with wide errors.

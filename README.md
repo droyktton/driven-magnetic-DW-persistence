@@ -21,6 +21,7 @@ Each data set is a separate study with its own folder and report:
 | 7 | `0_42A_20s_20x_52C_1/`: as Study 5, 0.42 A = 24.2 Oe at 52 °C | [`0_42A_20s_20x_52C_1/REPORT.md`](0_42A_20s_20x_52C_1/REPORT.md) |
 | 8 | `P7925_0_04A_24jun16/`: sample P7925, 0.04 A, 6000 TIFF frames, Δt ≈ 9.5 s (15.9 h), scale 0.1175 µm/px assumed, horizontal wall (`--rotate 3 --bright-domain`) | [`P7925_0_04A_24jun16/REPORT.md`](P7925_0_04A_24jun16/REPORT.md) |
 | 9 | `P7925_0_04A_26jun16/`: same sample and drive, two days later, 6000 frames, Δt ≈ 7.8 s (13 h) | [`P7925_0_04A_26jun16/REPORT.md`](P7925_0_04A_26jun16/REPORT.md) |
+| 10 | `GdFeCo_B1743_600mA_16may17/`: ferrimagnetic GdFeCo (B1743, 10 nm), 600 mA, 10800 Micro-Manager TIFF frames, Δt = 2 s (6 h), scale 0.1175 µm/px assumed, wall moving to the right (`--bright-domain --crop-right 1200`) | [`GdFeCo_B1743_600mA_16may17/REPORT.md`](GdFeCo_B1743_600mA_16may17/REPORT.md) |
 
 Cross-study question, qEW or qKPZ below the crossover length l₀: [`UNIVERSALITY.md`](UNIVERSALITY.md).
 
