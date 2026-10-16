@@ -1,0 +1,24 @@
+{
+ "movie": "PtCoNiAl_8Marzo2016_BCI450mA_H150Oe_5X_650umX486um_Dt3mSeg_5fps_0_015vecesRealTime BIS.avi",
+ "n_frames_video": 35,
+ "frames": [
+  0,
+  34
+ ],
+ "fps_header": 7.0,
+ "sign": 1,
+ "sigma": 1.0,
+ "detrend": false,
+ "detrend_offset_range": [
+  0.0,
+  0.0
+ ],
+ "otsu_threshold": 13.045846939086914,
+ "amp_median_switched": 24.409439086914062,
+ "amp_median_not": 0.0,
+ "frac_switched": 0.910308217285588,
+ "shape": [
+  1040,
+  1392
+ ]
+}

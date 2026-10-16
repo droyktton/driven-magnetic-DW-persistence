@@ -1,0 +1,24 @@
+{
+ "movie": "PtCoNiAl__13Marzo2016__BGI180mA_H10_4Oe_20X_163umX122um_Dt20Seg_50fps_1000vecesRealTime.avi",
+ "n_frames_video": 250,
+ "frames": [
+  0,
+  249
+ ],
+ "fps_header": 50.0,
+ "sign": 1,
+ "sigma": 1.0,
+ "detrend": true,
+ "detrend_offset_range": [
+  -39.0,
+  0.0
+ ],
+ "otsu_threshold": 24.07218360900879,
+ "amp_median_switched": 27.719161987304688,
+ "amp_median_not": 21.785995483398438,
+ "frac_switched": 0.7660042274535809,
+ "shape": [
+  1040,
+  1392
+ ]
+}

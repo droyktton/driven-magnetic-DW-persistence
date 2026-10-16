@@ -113,6 +113,19 @@ Figures: `fig_universality.png` in each study; Studies 1–7 in `0_42A_20s_20x_5
 - Studies 5–7 (same sample and T): l× = 80, 13, 15 µm at 20.7, 21.9, 24.2 Oe, all on single-valued walls. If l× is ξ_av, it falls with the field, the expected direction, but much more steeply than L_opt ∝ H^−3/4. The test that would settle it is several fields at fixed T in the same region of the film.
 - **The qEW/qKPZ tests are not affected.** The window [4 µm, l×] is depinning-like whichever crossover closes it, and in most studies the wall is single-valued in the whole window.
 
+## Bubbles and the scale of the fit (Studies 12–14, 2026-10-16)
+Expanding bubbles are often used for this question; a recent one (Durin et al., PRB 110, L020405 (2024): CoFeB, 0.13–0.16 mT, 0.4 µm/px) reads ζ ≈ 0.63 from the polar S(q) and from cluster shapes as qKPZ. Studies 12–14 (group movies, `arrival_map.py` + `contour_analysis.py`) give:
+
+| study | sample, drive, resolution | scales of the fit | ζ local width, raw → pixel-bias corrected | P_ov | Λ local (step10 B) | Λ(φ) macroscopic |
+|---|---|---|---|---|---|---|
+| 12 | Pt/(CoNi)×3 bubble, 10 ms pulses, 0.467 µm/px | 3.7–37 µm | 0.75 → **≈ 0.64** (20–80 px: 0.69 → 0.67) | 0 | 0.43–1.36 | 0.86–1.19 |
+| 13 | PtCoNiAl bubble, 150 Oe, 0.467 µm/px, 9 frames | 3.7–25 µm | 0.68 → ≈ 0.5 | 0 | 1.0–1.07 | 0.83–1.15 |
+| 14 | PtCoNiAl, two creep walls, 10.4 Oe, 0.117 µm/px | 0.9–9 µm | 0.91 → ≈ 0.7–0.85 | ≤ 0.15 | 0.79–1.08 | – |
+
+- The bias correction comes from synthetic bubbles of known ζ and the same amplitude analysed with the same code (`synthetic_bubble.py`, table in the Study 12 report): walls only ~1 px rough make the local-width exponent too large for ζ < 1 and too small for 1.25, and the bias grows with the amplitude.
+- **A bubble in a Pt/(CoNi) multilayer gives ζ ≈ 0.64 with isotropic growth and Λ = O(1)**, i.e. the bubble exponent alone is not evidence for qKPZ. With isotropic growth the KPZ coefficient is the geometric one, λ ≈ v (Λ ≈ 1), which vanishes at depinning; qKPZ needs an orientation-dependent depinning threshold, and in creep (velocity exponentially sensitive to the barrier) that would make the bubble facet.
+- **The exponent depends on the scales of the fit:** ≈ 0.5–0.64 for the bubbles over tens of µm at 0.47 µm/px, 0.7–0.9 for the walls of Study 14 over 1–9 µm, 0.9–1.25 for Studies 1–11 over 4 µm–l₀. That is what a crossover from a depinning-like exponent at small scales to ζ = 1/2 above ξ_av or l₀ produces when fits at different resolutions straddle it. The samples and drives differ, so this is a consistent picture, not a test; the test is a bubble at 0.12 µm/px, or a bubble series in field.
+
 ## Caveats
 - **v_n(φ) is noisy for the slowest walls.** In Studies 3 and 6 the wall moves ~4–8 µm in 10–11 h, so v_n(φ) rests on few switching events. Some Λ values there are negative (velocity falling faster than cos φ with the tilt), with wide errors.
 - **Pinned segments.** Segments pinned at defects are tilted and slow. With the defect mask Λ changes by ~0.1–0.6 (Study 2: 0.6–1.2 masked vs 0.3–0.8 unmasked) but stays O(1).

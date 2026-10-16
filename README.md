@@ -23,10 +23,13 @@ Each data set is a separate study with its own folder and report:
 | 9 | `P7925_0_04A_26jun16/`: same sample and drive, two days later, 6000 frames, Δt ≈ 7.8 s (13 h) | [`P7925_0_04A_26jun16/REPORT.md`](P7925_0_04A_26jun16/REPORT.md) |
 | 10 | `GdFeCo_B1743_600mA_16may17/`: ferrimagnetic GdFeCo (B1743, 10 nm), 600 mA, 10800 Micro-Manager TIFF frames, Δt = 2 s (6 h), scale 0.1175 µm/px assumed, wall moving to the right (`--bright-domain --crop-right 1200`) | [`GdFeCo_B1743_600mA_16may17/REPORT.md`](GdFeCo_B1743_600mA_16may17/REPORT.md) |
 | 11 | `P7925_0_04A_23jun16/`: sample P7925, 0.04 A (as Studies 8–9, one day earlier than 8), 3000 TIFF frames, Δt = 8.25 s (6.9 h), scale assumed; manual swept threshold and rows 130–979 (`--swept-thr 0.018 --rows 130 980`) | [`P7925_0_04A_23jun16/REPORT.md`](P7925_0_04A_23jun16/REPORT.md) |
+| 12 | `CoNi_bubble_130mA_10mar16/`: Pt/(Co0.2Ni0.6)×3/Ta, one expanding bubble, 10 ms field pulses (130 mA, small coil), 99 video frames (one per pulse), 5X, 0.467 µm/px assumed; a planar defect cuts a notch (sector excluded) | [`CoNi_bubble_130mA_10mar16/REPORT.md`](CoNi_bubble_130mA_10mar16/REPORT.md) |
+| 13 | `PtCoNiAl_150Oe_8mar16/`: PtCoNiAl, 150 Oe, many bubbles nucleating and merging, 35 video frames, Δt = 3 ms, 5X (0.467 µm/px); one isolated bubble analysed | [`PtCoNiAl_150Oe_8mar16/REPORT.md`](PtCoNiAl_150Oe_8mar16/REPORT.md) |
+| 14 | `PtCoNiAl_10_4Oe_13mar16/`: PtCoNiAl, 10.4 Oe, two creep walls crossing the field, 250 video frames, Δt = 20 s, 20X (0.117 µm/px) | [`PtCoNiAl_10_4Oe_13mar16/REPORT.md`](PtCoNiAl_10_4Oe_13mar16/REPORT.md) |
 
-Cross-study question, qEW or qKPZ below the crossover length l₀: [`UNIVERSALITY.md`](UNIVERSALITY.md).
+Cross-study question, qEW or qKPZ below the crossover length l₀: [`UNIVERSALITY.md`](UNIVERSALITY.md). Studies 12–14 (bubbles, walls crossing a circular aperture) use the arrival-map tools `arrival_map.py` and `contour_analysis.py` instead of steps 1–11.
 
-Requires numpy, scipy, matplotlib and scikit-image; for videos also imageio-ffmpeg (or an `ffmpeg` binary on the PATH); for TIFF folders also tifffile and Pillow, and ffmpeg for the QC movie.
+Requires numpy, scipy, matplotlib and scikit-image; for videos also imageio-ffmpeg (or an `ffmpeg` binary on the PATH); for TIFF folders also tifffile and Pillow, and ffmpeg for the QC movie; `arrival_map.py` needs OpenCV (cv2).
 
 ## Usage
 
@@ -218,6 +221,22 @@ A self-contained description of all the roughness methods (local ζ, crossover l
 ### `bubble_event_map.py`: expanding bubble from an avalanche event map
 
 `python bubble_event_map.py EVENTS.csv --outdir OUT [--snapshots 300] [--rmin 8] [--rmin-sq 20] [--sector 1] [--smax-tau 30] [--tol 3]`. For data given not as a movie but as an event map: a CSV image where each pixel holds the time-ordered index of the avalanche in which it switched, or −1. There are no frame times, so the event index is the clock and lengths are in px. The −1 pixels are split into the initial bubble (the component at the centroid of the switched area), the outside (touching the border) and holes, which get the index of the nearest switched pixel. This gives an arrival map, from which `--snapshots` domains equally spaced in switched area are taken. For each one: the polar profile r(θ) of the subpixel contour (1 px Gaussian smoothing) on a periodic grid of `--sector` px of arc, and its S(q), fitted between 2π/(L_min/4) and 2π/`--rmin-sq`. Also the local width on arc windows rotated to their own axis (`wall_tools.overhang_segments`, as step11), with the variance of a perfect arc subtracted, for windows up to the smallest mean radius; and P_ov with the same windows. Avalanches: P(S) with a maximum-likelihood τ truncated to [5, `--smax-tau`] px (the untruncated fit is dominated by the cutoff), and extents ℓ_∥, ℓ_⊥ along and across the wall tangent at each avalanche's barycentre. Outputs `bubble.npz`, `fig_bubble_map.png`, `fig_bubble_roughness.png`, `fig_bubble_avalanches.png`.
+
+### `arrival_map.py`: arrival map of a movie (bubbles, several walls)
+
+`python arrival_map.py MOVIE --outdir DIR [--sign 1] [--sigma 1] [--detrend] [--frames F0 F1] [--qc K1,K2,...]`. For geometries that step1 does not handle (bubbles, several walls, walls crossing a circular aperture). For every pixel, the frame of the largest step of its grey level (step-function cross-correlation, as in Durin et al., PRB 110, L020405 (2024)): maximise the signed difference of the means after and before the step times √(n₁n₂/N). Frames smoothed by `--sigma` px; pixels with a step amplitude below the Otsu threshold never switched (−1). `--detrend` removes a global brightness change (camera gain, lamp): each frame is shifted by the cumulative median of the frame-to-frame change over the aperture. Outputs `arrival.npz` (ta, amplitude, mean frame), `meta.json` and `fig_qc_overlay.png` (switched region {0 ≤ ta ≤ k} over frame k), to be approved before the analysis.
+
+### `contour_analysis.py`: roughness, overhangs and KPZ term from an arrival map
+
+`python contour_analysis.py DIR/arrival.npz DIR --frames K0 K1 [--um-per-px s] [--centre y x] [--exclude-deg a b] [--roi-erode px] [--ddef 8] [--every n] [--skip-kpz]`. Per frame, the subpixel contour of {0 ≤ ta ≤ k} (1 px smoothing); points outside the ROI (bright aperture of the mean frame eroded by `--roi-erode`), within `--ddef` px of a never-switched island (defect) or, for a bubble (`--centre`), inside the angular sector `--exclude-deg` are dropped, and the contiguous pieces ≥ 60 px kept. Then:
+- local width with local rotation (`wall_tools.overhang_segments`, as step7/step11), minus the variance of a perfect arc for a bubble; ζ over E = 8–80 px and 20–80 px; P_ov(E) at tol 2, 3, 5 px and l₀^geom;
+- KPZ term as step10 B: segments of arc length L = 8, 16, 32 px, the pixels switching in (k, k+dt] assigned to the nearest contour point, v_n = count/(L dt), tilt relative to the wall at scale 8L; v/⟨v⟩ = a[1 + b Δφ + (κ/2)Δφ²], Λ = 1 + κ (0 elastic qEW, 1 isotropic, ≫ 1 qKPZ), 12-block bootstrap;
+- bubble only: macroscopic normal velocity vs orientation from the radial advance between frames (Fourier fit, modes n ≤ 2 and ≤ 4, on the allowed angles; noise from random rotations of each interval), Krug–Spohn Λ(φ) = (v + v″)/v (a uniform drift, n = 1, cancels); skewness of r(θ) minus modes n ≤ 4.
+Outputs `contour_analysis.npz`, `fig_contour_analysis.png`.
+
+### `synthetic_bubble.py`: synthetic bubbles of known ζ (calibration)
+
+`python synthetic_bubble.py ZETA SEED --out FILE.npz|.csv [--w50 1] [--r0 106] [--r1 400]`. A bubble whose wall has S(q) ∼ q^−(1+2ζ) (or a broken spectrum `Z1:Z2:LC`), fixed in θ and rescaled during the growth (nested domains, amplitude stationary in arc length), with local width `--w50` px over 50 px of arc; written as an arrival map (`contour_analysis.py`) or an event map (`bubble_event_map.py`). Used to calibrate the local-width exponent of walls only ~1 px rough (Studies 12–13).
 
 ## Figures
 

@@ -1,0 +1,24 @@
+{
+ "movie": "Pt6(Co02Ni06)x3Ta5_10ms(t_total1s)130mABobinaChica 5XSinBKG 1080.mov",
+ "n_frames_video": 99,
+ "frames": [
+  0,
+  98
+ ],
+ "fps_header": 10.0,
+ "sign": 1,
+ "sigma": 1.0,
+ "detrend": false,
+ "detrend_offset_range": [
+  0.0,
+  0.0
+ ],
+ "otsu_threshold": 89.87374114990234,
+ "amp_median_switched": 145.31451416015625,
+ "amp_median_not": 36.65922927856445,
+ "frac_switched": 0.7635243976569408,
+ "shape": [
+  1040,
+  1392
+ ]
+}
