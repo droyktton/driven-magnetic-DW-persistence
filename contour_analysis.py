@@ -226,5 +226,8 @@ ax[1].axhline(0.5, color="0.5", lw=0.8); ax[1].set_ylim(-0.02, 1.02); ax[1].lege
 for dt in dts:
     fs = [f for f in KP if f["dt"] == dt]
     ax[2].errorbar([f["L"] for f in fs], [f["Lambda"] for f in fs], [[f["Lambda"] - f["ci"][0] for f in fs], [f["ci"][1] - f["Lambda"] for f in fs]], marker="o", capsize=3, label=f"dt = {dt}")
-ax[2].axhline(1, color="0.5", ls=":"); ax[2].axhline(0, color="0.5", ls=":"); ax[2].set_xscale("log"); ax[2].set_xlabel("L [px]"); ax[2].set_ylabel("Λ"); ax[2].legend()
+ax[2].axhline(1, color="0.5", ls=":"); ax[2].axhline(0, color="0.5", ls=":")
+if KP: ax[2].set_xscale("log")
+ax[2].set_xlabel("L [px]"); ax[2].set_ylabel("Λ")
+if KP: ax[2].legend()
 fig.tight_layout(); fig.savefig(os.path.join(a.outdir, "fig_contour_analysis.png"), dpi=100)

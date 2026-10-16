@@ -124,7 +124,18 @@ Expanding bubbles are often used for this question; a recent one (Durin et al., 
 
 - The bias correction comes from synthetic bubbles of known ζ and the same amplitude analysed with the same code (`synthetic_bubble.py`, table in the Study 12 report): walls only ~1 px rough make the local-width exponent too large for ζ < 1 and too small for 1.25, and the bias grows with the amplitude.
 - **A bubble in a Pt/(CoNi) multilayer gives ζ ≈ 0.64 with isotropic growth and Λ = O(1)**, i.e. the bubble exponent alone is not evidence for qKPZ. With isotropic growth the KPZ coefficient is the geometric one, λ ≈ v (Λ ≈ 1), which vanishes at depinning; qKPZ needs an orientation-dependent depinning threshold, and in creep (velocity exponentially sensitive to the barrier) that would make the bubble facet.
-- **The exponent depends on the scales of the fit:** ≈ 0.5–0.64 for the bubbles over tens of µm at 0.47 µm/px, 0.7–0.9 for the walls of Study 14 over 1–9 µm, 0.9–1.25 for Studies 1–11 over 4 µm–l₀. That is what a crossover from a depinning-like exponent at small scales to ζ = 1/2 above ξ_av or l₀ produces when fits at different resolutions straddle it. The samples and drives differ, so this is a consistent picture, not a test; the test is a bubble at 0.12 µm/px, or a bubble series in field.
+- **Control: is the bubble value a resolution or scale effect? No.** Five walls of known exponent were put through the same `contour_analysis.py`, at full resolution and coarse-grained ×4 to the bubbles' pixel (median of 4 × 4 blocks of the arrival map, 0.47 µm/px), fitted over the bubbles' scales (3.7–37 µm):
+
+| study (l₀) | full res., 0.9–9 µm | full res., 3.7–37 µm | coarse ×4, 8–80 px (3.7–37 µm) | coarse ×4, 20–80 px | w at 10/20/50 coarse px |
+|---|---|---|---|---|---|
+| 2 (28 µm) | 1.33 | 1.06 | 1.11 | 1.06 | 0.52/1.20/3.14 |
+| 4 (15 µm) | 1.21 | 1.03 | 1.06 | 0.89 | 0.39/0.91/2.31 |
+| 5 (80 µm) | 1.12 | 1.14 | 1.20 | 1.36 | 0.34/0.74/2.20 |
+| 8 (23 µm) | 1.27 | 1.06 | 1.05 | 0.96 | 0.36/0.84/2.12 |
+| 10 (35 µm) | 1.39 | 1.20 | 1.24 | 1.21 | 0.41/1.03/3.10 |
+
+  At the bubbles' resolution and scales these walls still give ζ ≈ 0.9–1.35 (raw; the pixel bias at their amplitude, w ≈ 2–3 px at 50 px, is ≤ 0.05 for ζ ≥ 1), not ≈ 0.6–0.75. They are also two to three times rougher than the bubble walls at the same scale (w ≈ 2.1–3.1 px against 1.1 px at 23 µm). **So the bubble exponent is not produced by the resolution or by the range of the fit: bubble walls are smoother and have a smaller ζ than our straight creep walls.** Whether that is the geometry (expansion, curvature, the circle subtraction of the estimator), the drive (Studies 12–13 are fast: 3.5 µm per 10 ms pulse, 2.3 mm/s) or the samples is open. Studies 13 (bubble, 150 Oe) and 14 (walls, 10.4 Oe) are the same PtCoNiAl film: ζ ≈ 0.5 against ≈ 0.7–0.85, at different drives and resolutions.
+- Next tests: a qEW line simulated in the expanding geometry, analysed with the same code (does expansion lower the measured ζ?); bubbles of our samples at 20X and creep fields.
 
 ## Caveats
 - **v_n(φ) is noisy for the slowest walls.** In Studies 3 and 6 the wall moves ~4–8 µm in 10–11 h, so v_n(φ) rests on few switching events. Some Λ values there are negative (velocity falling faster than cos φ with the tilt), with wide errors.
