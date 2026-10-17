@@ -92,7 +92,9 @@ lmax = 0.95 * min(max(p[0].size * 0.5 for p in C[k]) for k in frames)
 if bubble: lmax = min(lmax, min(Rk.values()))
 lams = np.unique(np.round(np.logspace(np.log10(4), np.log10(lmax), 24)))
 NT = np.zeros(lams.size); NO = {t: np.zeros(lams.size) for t in TOLS}; EX = [[] for _ in lams]; W2 = [[] for _ in lams]
+W2k = []                                                                       # per frame, for the time dependence
 for k in frames:
+    wk = [[] for _ in lams]
     for y, x in C[k]:
         nt, no, ex, w2 = overhang_segments(y, x, lams, 0.5, TOLS)
         NT += nt
@@ -101,7 +103,8 @@ for k in frames:
             circ = 0.0
             if bubble:
                 al = np.linspace(-lam / (2 * Rk[k]), lam / (2 * Rk[k]), 200); circ = np.var(Rk[k] * np.cos(al))
-            EX[j].append(ex[j]); W2[j].append(np.asarray(w2[j]) - circ)
+            EX[j].append(ex[j]); W2[j].append(np.asarray(w2[j]) - circ); wk[j].append(np.asarray(w2[j]) - circ)
+    W2k.append([np.mean(np.concatenate(v)) if sum(len(u) for u in v) else np.nan for v in wk])
 E = np.array([np.median(np.concatenate(e)) if sum(len(v) for v in e) else np.nan for e in EX])
 w2m = np.array([np.mean(np.concatenate(w)) if sum(len(v) for v in w) else np.nan for w in W2])
 P = {t: NO[t] / np.maximum(NT, 1) for t in TOLS}
@@ -176,7 +179,7 @@ for L in (() if a.skip_kpz else (8, 16, 32)):
         KP.append(f)
         print(f"   L = {L:3d} px ({L * s:4.1f} um), dt = {dt:2d}: n = {f['n']:6d}, Lambda = {f['Lambda']:+.2f} [{f['ci'][0]:+.2f}, {f['ci'][1]:+.2f}], R = {f['R']:.3f}")
 
-out = dict(E=E, w2=w2m, lams=lams, zeta_W=zW, zeta_W20=zW2, n_win=NT, **{f"P_tol{t:g}": P[t] for t in TOLS},
+out = dict(E=E, w2=w2m, w2_frame=np.array(W2k), lams=lams, zeta_W=zW, zeta_W20=zW2, n_win=NT, **{f"P_tol{t:g}": P[t] for t in TOLS},
            **{f"l0g_tol{t:g}": l0g[t] for t in TOLS}, kpz=json.dumps([{k: (v.tolist() if hasattr(v, 'tolist') else v) for k, v in f.items()} for f in KP]))
 
 # ---------------------------------------------------------------- bubble: macroscopic anisotropy and heights

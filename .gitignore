@@ -4,3 +4,4 @@ frames/
 __pycache__/
 */contours.npz
 */drift_raw.npy
+*.log
