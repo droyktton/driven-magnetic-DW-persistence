@@ -238,6 +238,10 @@ Outputs `contour_analysis.npz`, `fig_contour_analysis.png`.
 
 `python synthetic_bubble.py ZETA SEED --out FILE.npz|.csv [--w50 1] [--r0 106] [--r1 400]`. A bubble whose wall has S(q) ∼ q^−(1+2ζ) (or a broken spectrum `Z1:Z2:LC`), fixed in θ and rescaled during the growth (nested domains, amplitude stationary in arc length), with local width `--w50` px over 50 px of arc; written as an arrival map (`contour_analysis.py`) or an event map (`bubble_event_map.py`). Used to calibrate the local-width exponent of walls only ~1 px rough (Studies 12–13).
 
+### `phi4_contour_roughness.py`: roughness of φ⁴ critical walls, bubble or straight
+
+`python phi4_contour_roughness.py DIR [DIR2 ...] --L L [--Ly LY] [--bubble R0] [--block B] [--outdir OUT]`. Reads the critical fields written by [vmc-phi4-depinning](https://github.com/droyktton/vmc-phi4-depinning) with `--dump-field` (`criticafield_*.bin`, raw float32) and takes the φ = 0 contour: the spanning wall (periodic in x) or, with `--bubble R0`, the closed wall of a bubble (points within 3 sites of the initial circle dropped). `--block B` first binarises B × B blocks, as a camera pixel. Local width of rotated arc windows and P_ov(E) as `contour_analysis.py`, minus the variance of an arc of the mean radius for a bubble; ζ over several ranges with a bootstrap over samples. Outputs `phi4_roughness.npz`, `fig_phi4_roughness.png`. Used for the bubble-vs-straight test in `UNIVERSALITY.md` (figure in `phi4_bubble/`).
+
 ## Figures
 
 | File | What it shows |

@@ -135,7 +135,19 @@ Expanding bubbles are often used for this question; a recent one (Durin et al., 
 | 10 (35 µm) | 1.39 | 1.20 | 1.24 | 1.21 | 0.41/1.03/3.10 |
 
   At the bubbles' resolution and scales these walls still give ζ ≈ 0.9–1.35 (raw; the pixel bias at their amplitude, w ≈ 2–3 px at 50 px, is ≤ 0.05 for ζ ≥ 1), not ≈ 0.6–0.75. They are also two to three times rougher than the bubble walls at the same scale (w ≈ 2.1–3.1 px against 1.1 px at 23 µm). **So the bubble exponent is not produced by the resolution or by the range of the fit: bubble walls are smoother and have a smaller ζ than our straight creep walls.** Whether that is the geometry (expansion, curvature, the circle subtraction of the estimator), the drive (Studies 12–13 are fast: 3.5 µm per 10 ms pulse, 2.3 mm/s) or the samples is open. Studies 13 (bubble, 150 Oe) and 14 (walls, 10.4 Oe) are the same PtCoNiAl film: ζ ≈ 0.5 against ≈ 0.7–0.85, at different drives and resolutions.
-- Next tests: a qEW line simulated in the expanding geometry, analysed with the same code (does expansion lower the measured ζ?); bubbles of our samples at 20X and creep fields.
+- **Does the expanding, closed geometry lower ζ? Only by ~0.05–0.15, not to ≈ 0.6.** Two simulations, analysed with the same local-width estimator (2026-10-16/17):
+  - *Elastic qEW ring vs line* (continuous elastic string in a fixed 2D Gaussian random field, radial motion; ring started as a circle, line straight; scratch code, not in the repo; `contour_analysis.py`). At the same mean velocity near threshold (v ≈ 5×10⁻⁴), ζ (8–80 px / 20–80 px) = 1.11–1.16 / 0.98–1.06 for the ring (F = 0.62, 2 seeds) against 1.24–1.30 / 1.15–1.27 for the line (F = 0.68, 2 seeds); farther from threshold (v ≈ 0.03) 1.03–1.05 against 1.09–1.13. Λ of the ring 0.1–0.7, P_ov ≈ 0.
+  - *φ⁴ critical depinning configurations* (vmc-phi4-depinning, branch `bubble`: fully periodic L × L box, initial disk R0 = 256, L = 2048, isotropic random-bond disorder; straight controls with the usual geometry; `phi4_contour_roughness.py`, figure [`phi4_bubble/fig_phi4_bubble_vs_straight.png`](phi4_bubble/fig_phi4_bubble_vs_straight.png)). Δ = 0.3 and 0.4, where l_o ≳ 800 sites, so the walls are single-valued at all the scales of the fit:
+
+| Δ, geometry (samples) | ζ 8–80 sites | ζ 20–80 | ζ 40–200 | w at 50 sites | ζ, 4 × 4 blocks, 8–40 blocks | P_ov |
+|---|---|---|---|---|---|---|
+| 0.4, bubble (10) | 1.30 | 1.24 | 1.13 | 1.24 | 1.17 | 0 |
+| 0.4, straight (3) | 1.36 | 1.32 | 1.24 | 1.36 | 1.28 | 0 |
+| 0.3, bubble (10) | 1.32 | 1.26 | 1.20 | 0.99 | 1.18 | 0 |
+| 0.3, straight (3) | 1.34 | 1.32 | 1.25 | 0.98 | 1.21 | 0 |
+
+  Bootstrap errors over samples are ≤ 0.02 (bubbles) and ≤ 0.08 (straight). The critical bubble grows from R0 = 256 to a mean radius ≈ 400–420 and is as rough as the straight wall below ~100 sites; binarising on 4 × 4 blocks (the experiments' pixel) lowers ζ by ~0.1 in both geometries. Above ~100 sites the subtracted arc of the mean radius is > 10 % of the raw w² and assumes a uniform curvature that the lobed critical bubbles do not have, so the lower bubble ζ at 40–200 is not reliable.
+- **So neither the geometry, nor the circle subtraction, nor the pixel explains ζ ≈ 0.6.** At depinning, with isotropic disorder, a bubble is qEW like a straight wall. The smooth, low-ζ walls of the experimental bubbles must come from the drive (Studies 12–13 are fast, far above the creep regime) or from the samples. Next: bubbles of our samples at creep fields, and the drive dependence of ζ in a single sample.
 
 ## Caveats
 - **v_n(φ) is noisy for the slowest walls.** In Studies 3 and 6 the wall moves ~4–8 µm in 10–11 h, so v_n(φ) rests on few switching events. Some Λ values there are negative (velocity falling faster than cos φ with the tilt), with wide errors.
