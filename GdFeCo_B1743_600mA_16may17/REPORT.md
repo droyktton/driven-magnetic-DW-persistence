@@ -98,3 +98,7 @@ Row-mean subtracted, τ ≤ 2000 frames (67 min). τ in frames of 2 s.
 - **Field unknown:** the calibration of coil BG1 is not in the data folder.
 - **Short wall:** 63 µm of wall (47 µm on the base plane), so l₀ ≈ 20–35 µm leaves less than a decade above 4 µm.
 - **Not run yet:** steps 3–6 and 9.
+
+## Related data
+
+- **Velocity vs current of the same sample** (pulse movies of 16 Feb 2017, 500–1100 mA) and the 500 mA steady run: Study 17, [`GdFeCo_B1743_500mA_16feb17/REPORT.md`](../GdFeCo_B1743_500mA_16feb17/REPORT.md) and `fig_velocity_current.png` there. The pulse data follow a creep law, ln v = 62.8 − 301.5 I^(−1/4) (v in nm/s, I in mA); Studies 10 and 16 lie a factor 2–4 below its extrapolation (different day, probably a different region).

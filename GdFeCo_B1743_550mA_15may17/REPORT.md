@@ -101,3 +101,7 @@ Step 7 was run with `--from-h` instead: on h(y,t) as measured, without rotation 
 5. **Different days and possibly different field of view:** comparing v, τ\* and ζ with Study 10 assumes the same sample region and temperature.
 6. **v ratio:** 3.2 for 8 % less current, plausible for creep, but from two runs only.
 7. **Not run:** steps 3–6 and 9.
+
+## Related data
+
+- **Velocity vs current of the same sample** (pulse movies of 16 Feb 2017, 500–1100 mA) and the 500 mA steady run: Study 17, [`GdFeCo_B1743_500mA_16feb17/REPORT.md`](../GdFeCo_B1743_500mA_16feb17/REPORT.md) and `fig_velocity_current.png` there. The pulse data follow a creep law, ln v = 62.8 − 301.5 I^(−1/4) (v in nm/s, I in mA); Studies 10 and 16 lie a factor 2–4 below its extrapolation (different day, probably a different region).
