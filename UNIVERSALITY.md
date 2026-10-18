@@ -50,6 +50,7 @@ Two independent tests are therefore used, both measured on the walls themselves.
 | 9 | same, two days later | 0.19 | 48 (29–48, poorly bounded) | 0.90 (0.89–0.91) | ≈ 1.0 (no break in the field) | 1161 / 3948 | 1.22 (0.73–1.99) | 0.60 (0.48–0.75) | 0.37 |
 | 10 | GdFeCo B1743, 600 mA (scale assumed) | 2.36 | 35 (18–35) | 1.17 (1.14–1.21) | 1.31 (1.26–1.37) | 13 / 1266 | 0.56 (0.10–2.57) | −0.02 (−1.48–0.36) | 0.24 |
 | 11 | P7925, 0.04 A, wall barely moves (scale assumed) | 0.15 | 26 (5–26, no clean break) | 0.77 (0.76–0.79) | 0.89 (no break in the field) | 1700 / 3714 | 0.65 (0.07–1.23) | 0.09 (−0.44–0.61) | 0.17 |
+| 16 | GdFeCo B1743, 550 mA (scale assumed; step 7 `--from-h`, no fold exclusion) | 0.75 | 9 (8–27, not bracketed) | 0.83 (0.80–0.86) | 0.90 (no break in the field) | 44 / 152 | 0.46 (0.27–0.81) | 0.43 (0.18–1.53) | 0.18 |
 
 Notes on the table:
 - **Errors:** 16–84 % block-bootstrap intervals.

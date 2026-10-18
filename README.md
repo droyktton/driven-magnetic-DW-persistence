@@ -27,6 +27,7 @@ Each data set is a separate study with its own folder and report:
 | 13 | `PtCoNiAl_150Oe_8mar16/`: PtCoNiAl, 150 Oe, many bubbles nucleating and merging, 35 video frames, Δt = 3 ms, 5X (0.467 µm/px); one isolated bubble analysed | [`PtCoNiAl_150Oe_8mar16/REPORT.md`](PtCoNiAl_150Oe_8mar16/REPORT.md) |
 | 14 | `PtCoNiAl_10_4Oe_13mar16/`: PtCoNiAl, 10.4 Oe, two creep walls crossing the field, 250 video frames, Δt = 20 s, 20X (0.117 µm/px) | [`PtCoNiAl_10_4Oe_13mar16/REPORT.md`](PtCoNiAl_10_4Oe_13mar16/REPORT.md) |
 | 15 | `P7925_0_025A_3jun16/` (exploratory): sample P7925, 0.025 A (0.03 A in the info file), 3000 TIFF frames, Δt = 6.25 s (5.2 h), scale assumed; ~2 % contrast and ~10–15 px total advance, so step1 fails: wall shape and mean velocity only, from `tiff_arrival_map.py` and ridge tracking; see its caveats | [`P7925_0_025A_3jun16/REPORT.md`](P7925_0_025A_3jun16/REPORT.md) |
+| 16 | `GdFeCo_B1743_550mA_15may17/`: same sample as Study 10, one day earlier, 550 mA, 10000 TIFF frames, Δt = 2 s (5.6 h), scale assumed; the wall rotates (tilt 26° → 43°), so step 7 runs with `--from-h` | [`GdFeCo_B1743_550mA_15may17/REPORT.md`](GdFeCo_B1743_550mA_15may17/REPORT.md) |
 
 Cross-study question, qEW or qKPZ below the crossover length l₀: [`UNIVERSALITY.md`](UNIVERSALITY.md). Studies 12–14 (bubbles, walls crossing a circular aperture) use the arrival-map tools `arrival_map.py` and `contour_analysis.py` instead of steps 1–11.
 

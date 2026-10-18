@@ -1,0 +1,29 @@
+/home/koltona/Codigos/driven-magnetic-DW-persistence/step7_roughness.py:314: RuntimeWarning: Mean of empty slice.
+  f"(segments excluded: {frac_excl[(ells >= args.rmin) & (ells <= rmax)].mean():.0%} in the fit range)")
+/home/koltona/mambaforge/lib/python3.10/site-packages/numpy/core/_methods.py:192: RuntimeWarning: invalid value encountered in scalar divide
+  ret = ret.dtype.type(ret / rcount)
+/home/koltona/Codigos/driven-magnetic-DW-persistence/step7_roughness.py:316: RuntimeWarning: Mean of empty slice.
+  f"(segments excluded: {frac_fold[(ells >= args.rmin) & (ells <= rmax)].mean():.0%} in the fit range)")
+  frame 0/10000
+  frame 2160/10000
+  frame 4320/10000
+  frame 6480/10000
+  frame 8640/10000
+theta0 = 37.23 deg (rotation +37.23); rows kept on the base plane: 82 (10 µm); frames used: 278
+residual tilt per frame after rotation: 81.52 deg max; rms width of the detrended wall: 31.59 px = 3.71 µm
+overhangs on the base plane: 41.8% of (row, frame); extent along the wall median 10 px, 90% 34 px, max 47; depth (front - back) median 150 px, 90% 338 px
+fit range: 25 < r < 20 px (2.9-2 µm)
+  area   zeta: S(q) nan ± nan  B(r) nan  w(l) nan  B(r) far from defects nan  | S(q) by thirds of the run: nan, nan, nan
+  front  zeta: S(q) nan ± nan  B(r) nan  w(l) nan  | S(q) by thirds of the run: nan, nan, nan
+  back   zeta: S(q) nan ± nan  B(r) nan  w(l) nan  | S(q) by thirds of the run: nan, nan, nan
+local width w2(l), each segment rotated by its own tilt (PCA), contour: zeta = nan ± nan; same on u_area: nan; line removed without rotation (w(l) above): nan
+   without segments tilted > 45 deg from the base plane: zeta = nan (segments excluded: nan% in the fit range)
+   without folded segments (contour > 1.5 x median at that l): zeta = nan (segments excluded: nan% in the fit range)
+   l =     8 px (   0.9 µm): w =  0.040 µm, local tilt sd  36.0 deg, 28943 segments, 17% tilted > 45 deg, median contour/l 1.19, 7% folded
+   l =    27 px (   3.2 µm): w =  0.181 µm, local tilt sd  33.3 deg, 8324 segments, 11% tilted > 45 deg, median contour/l 1.20, 5% folded
+   l =    82 px (   9.6 µm): w =  0.552 µm, local tilt sd  23.9 deg, 2440 segments, 6% tilted > 45 deg, median contour/l 1.24, 0% folded
+local structure factor S(q,l), segments rotated by their own tilt (fit: 2pi/l < q < 2pi/25 px; low band: factor 8 above 2pi/l):
+Traceback (most recent call last):
+  File "/home/koltona/Codigos/driven-magnetic-DW-persistence/step7_roughness.py", line 469, in <module>
+    ax[1].text(ax[1].get_xlim()[0] if False else ls_sq[0] * kk * 0.8, zz, lab, fontsize=8, color="0.5", va="bottom")
+IndexError: index 0 is out of bounds for axis 0 with size 0
