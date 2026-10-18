@@ -1,0 +1,44 @@
+{
+  "fps": 0.16,
+  "um_per_px": 0.1175,
+  "n_frames_video": 3000,
+  "frame_first": 0,
+  "frame_last": 2948,
+  "height": 800,
+  "width": 89,
+  "source": "tiff",
+  "tiff_dir": "/home/koltona/MOKEdata_local/3jun16",
+  "crop_right": 800,
+  "crop_left": 0,
+  "rows_used": [
+    496,
+    585
+  ],
+  "drift_max_px": [
+    0.5,
+    5.800000190734863
+  ],
+  "contrast_threshold": 4.162908736840554e-05,
+  "n_defect_px": 11619,
+  "frac_rows_front_ne_area": 0.276561797752809,
+  "tilt_deg_first_last": [
+    2.402733922064674,
+    -3.0473145136771675
+  ],
+  "overhang_rows_mean": 17.822666666666667,
+  "nref": 5,
+  "offset": "auto",
+  "flatfield": 2,
+  "init_wall": true,
+  "rows_option": null,
+  "swept_thr": null,
+  "bright_domain": true,
+  "geometry": "dark domain on the left, wall moving to +x; h = W-1-x_eff (switched area per row), columns of h = image rows y0..y1-1 (registered to frame 0)",
+  "median_x": 5,
+  "edge_margin": 2,
+  "frac_retreat": 0.0,
+  "warnings": [
+    "51 frames dropped: the wall touches the edge or is missing in frames 2949-2999; using frames 0..2948",
+    "the mean <h> moves backward in 1157 steps"
+  ]
+}

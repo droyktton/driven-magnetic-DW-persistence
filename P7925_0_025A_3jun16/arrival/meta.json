@@ -1,0 +1,15 @@
+{
+ "tiffdir": "/home/koltona/MOKEdata_local/3jun16",
+ "frames": 3000,
+ "block": 10,
+ "crop": [
+  20,
+  760,
+  20,
+  1020
+ ],
+ "sign": 1,
+ "sigma": 1.5,
+ "thr": 0.7468530185207429,
+ "switched": 0.0032256756756756755
+}
