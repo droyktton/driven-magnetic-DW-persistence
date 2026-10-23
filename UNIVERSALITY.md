@@ -51,6 +51,7 @@ Two independent tests are therefore used, both measured on the walls themselves.
 | 10 | GdFeCo B1743, 600 mA (scale assumed) | 2.36 | 35 (18–35) | 1.17 (1.14–1.21) | 1.31 (1.26–1.37) | 13 / 1266 | 0.56 (0.10–2.57) | −0.02 (−1.48–0.36) | 0.24 |
 | 11 | P7925, 0.04 A, wall barely moves (scale assumed) | 0.15 | 26 (5–26, no clean break) | 0.77 (0.76–0.79) | 0.89 (no break in the field) | 1700 / 3714 | 0.65 (0.07–1.23) | 0.09 (−0.44–0.61) | 0.17 |
 | 16 | GdFeCo B1743, 550 mA (scale assumed; step 7 `--from-h`, no fold exclusion) | 0.75 | 9 (8–27, not bracketed) | 0.83 (0.80–0.86) | 0.90 (no break in the field) | 44 / 152 | 0.46 (0.27–0.81) | 0.43 (0.18–1.53) | 0.18 |
+| 17 | GdFeCo B1743, 500 mA, Feb 2017 (scale assumed; 108 µm wall) | 0.31 | 49 (10–49; P_ov(l×) ≈ 0.1, not the overhang scale) | 0.94 (0.92–0.95) | 1.02 (break at the end of the range) | 1743 / 6893 | 0.74 (0.26–1.66) | 0.51 (0.39–0.76) | 0.18 |
 
 Notes on the table:
 - **Errors:** 16–84 % block-bootstrap intervals.
@@ -86,6 +87,7 @@ Figures: `fig_universality.png` in each study; Studies 1–7 in `0_42A_20s_20x_5
    - ζ ≈ 1.0–1.2 below l₀ ≈ 18–35 µm, ζ₁ = 1.31 with the crossover fitted; χ² 13 (qEW) against 1266 (qKPZ).
    - Λ ≈ 0.1–0.75 for L = 2–8 µm, R ≤ 0.24. At L = 16 µm the contour gives Λ ≈ +2 and h(x) Λ ≈ −1.4: opposite signs on few segments, not a KPZ signal.
    - It is the fastest wall (2.4 nm/s), and still no Λ ≫ 1.
+   - Same sample at 550 mA (Study 16, 0.75 nm/s) and 500 mA (Study 17, 0.31 nm/s, 108 µm wall): ζ ≈ 0.83–0.9 and 0.91–0.97 below the break, qEW favoured by χ² in both, Λ = O(1) (≤ 0.8 median). In Study 17 the break (l× ≈ 43–49 µm) is bracketed on a single-valued wall (P_ov ≈ 0.1).
 5. **Study 11 is the exception: ζ ≈ 0.7.** Same sample and drive as Studies 8–9, but the wall advances only 3.7 µm in 6.9 h (mostly in one bulge), about the dynamical correlation length ξ ≈ 2–3 µm. At larger scales the shape is still that of the initial wall, not a driven steady state, and a wall prepared at rest is expected to be in the equilibrium regime (ζ = 2/3); ζ also drifts over the run (0.92 → 0.52). Λ = O(1) and R ≤ 0.17, as everywhere else, so test B gives no sign of qKPZ. Its roughness is not used for the decision.
 6. **Conclusion.** Below l₀ the walls behave as qEW interfaces, with at most the geometric KPZ term of an isotropic medium (λ ∝ v). The qKPZ signatures are absent: no ζ ≈ 0.63, and no λ/v that grows as the creep velocity falls.
 
@@ -104,12 +106,13 @@ Figures: `fig_universality.png` in each study; Studies 1–7 in `0_42A_20s_20x_5
 | 9 | 48 | **0.40** | **58 (41–58)** * | 0.41 | 53 | **break ≈ overhang crossover** |
 | 10 | 35 | 0.18 | > 51 | 0.14 | 200 | break < l₀^geom |
 | 11 | 26 | 0.21 | 46 (44–59) | 0.33 | 72 | no clean break |
+| 17 | 49 | 0.10 | > 100 | ≈ 0.1 | 450 | break < l₀^geom |
 
 \* reached only with windows longer than half the wall, where one large fold can dominate.
 
 - l₀^geom does not depend on the tolerance (2, 3 or 5 px change it by ≤ 15 %).
 - **Only in Studies 2 and 9** is the wall about half multivalued at the break (P_ov ≈ 0.4). These are, with Study 3, the runs where overhangs are common (one every 30–50 µm along the wall). There the break is the overhang crossover of Kolton, Ferrero & Rosso.
-- **In Studies 4–8 and 10** the wall is still single-valued at the break (P_ov ≤ 0.2, mostly ≤ 0.06), and overhangs are rare (one every 150–6000 µm). The break there is not l₀; l₀ lies above it, often beyond the field of view.
+- **In Studies 4–8, 10 and 17** the wall is still single-valued at the break (P_ov ≤ 0.2, mostly ≤ 0.06), and overhangs are rare (one every 150–6000 µm). The break there is not l₀; l₀ lies above it, often beyond the field of view.
 - A break in a single-valued wall is what the avalanche scale ξ_av would produce (thermal regime, ζ = 1/2 above it). It is a candidate, not a proof. Other causes of a break in a single-valued wall: the macroscopic shape of the wall in the field of view (curvature set by the nucleation and the aperture), and the limited range of ℓ near the wall length.
 - Studies 5–7 (same sample and T): l× = 80, 13, 15 µm at 20.7, 21.9, 24.2 Oe, all on single-valued walls. If l× is ξ_av, it falls with the field, the expected direction, but much more steeply than L_opt ∝ H^−3/4. The test that would settle it is several fields at fixed T in the same region of the film.
 - **The qEW/qKPZ tests are not affected.** The window [4 µm, l×] is depinning-like whichever crossover closes it, and in most studies the wall is single-valued in the whole window.

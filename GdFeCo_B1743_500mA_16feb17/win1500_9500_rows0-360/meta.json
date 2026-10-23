@@ -1,0 +1,44 @@
+{
+ "fps": 0.5,
+ "um_per_px": 0.1175,
+ "n_frames_video": 8000,
+ "frame_first": 1500,
+ "frame_last": 9499,
+ "height": 1200,
+ "width": 360,
+ "source": "tiff",
+ "tiff_dir": "/home/koltona/MOKEdata_local/GdFeCo_B1743_2017_02_16/B1743_Bg1iz500mA2s_1/Pos0",
+ "crop_right": 1200,
+ "crop_left": 0,
+ "rows_used": [
+  110,
+  1027
+ ],
+ "drift_max_px": [
+  0.30000001192092896,
+  4.099999904632568
+ ],
+ "contrast_threshold": 0.07226610802322408,
+ "n_defect_px": 12,
+ "frac_rows_front_ne_area": 0.04891534391534392,
+ "tilt_deg_first_last": [
+  11.606360188445494,
+  14.391909108491879
+ ],
+ "overhang_rows_mean": 10.907314814814814,
+ "nref": 5,
+ "offset": "auto",
+ "flatfield": 2,
+ "init_wall": true,
+ "rows_option": null,
+ "swept_thr": null,
+ "bright_domain": true,
+ "geometry": "dark domain on the left, wall moving to +x; h = W-1-x_eff (switched area per row), columns of h = image rows y0..y1-1 (registered to frame 0)",
+ "median_x": 5,
+ "edge_margin": 2,
+ "frac_retreat": 0.0,
+ "warnings": [
+  "the mean <h> moves backward in 5080 steps"
+ ],
+ "note": "Study 17 frames 1500-9499, wall rows 0-359 (360 rows as Study 16)"
+}
