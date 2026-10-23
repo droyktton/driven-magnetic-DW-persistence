@@ -106,13 +106,14 @@ Figures: `fig_universality.png` in each study; Studies 1–7 in `0_42A_20s_20x_5
 | 9 | 48 | **0.40** | **58 (41–58)** * | 0.41 | 53 | **break ≈ overhang crossover** |
 | 10 | 35 | 0.18 | > 51 | 0.14 | 200 | break < l₀^geom |
 | 11 | 26 | 0.21 | 46 (44–59) | 0.33 | 72 | no clean break |
+| 16 | 9 | 0.02 | > 39 | 0.04 | 600 | break ≪ l₀^geom (break not bracketed) |
 | 17 | 49 | 0.10 | > 100 | ≈ 0.1 | 450 | break < l₀^geom |
 
 \* reached only with windows longer than half the wall, where one large fold can dominate.
 
 - l₀^geom does not depend on the tolerance (2, 3 or 5 px change it by ≤ 15 %).
 - **Only in Studies 2 and 9** is the wall about half multivalued at the break (P_ov ≈ 0.4). These are, with Study 3, the runs where overhangs are common (one every 30–50 µm along the wall). There the break is the overhang crossover of Kolton, Ferrero & Rosso.
-- **In Studies 4–8, 10 and 17** the wall is still single-valued at the break (P_ov ≤ 0.2, mostly ≤ 0.06), and overhangs are rare (one every 150–6000 µm). The break there is not l₀; l₀ lies above it, often beyond the field of view.
+- **In Studies 4–8, 10, 16 and 17** the wall is still single-valued at the break (P_ov ≤ 0.2, mostly ≤ 0.06), and overhangs are rare (one every 150–6000 µm). The break there is not l₀; l₀ lies above it, often beyond the field of view.
 - A break in a single-valued wall is what the avalanche scale ξ_av would produce (thermal regime, ζ = 1/2 above it). It is a candidate, not a proof. Other causes of a break in a single-valued wall: the macroscopic shape of the wall in the field of view (curvature set by the nucleation and the aperture), and the limited range of ℓ near the wall length.
 - Studies 5–7 (same sample and T): l× = 80, 13, 15 µm at 20.7, 21.9, 24.2 Oe, all on single-valued walls. If l× is ξ_av, it falls with the field, the expected direction, but much more steeply than L_opt ∝ H^−3/4. The test that would settle it is several fields at fixed T in the same region of the film.
 - **The qEW/qKPZ tests are not affected.** The window [4 µm, l×] is depinning-like whichever crossover closes it, and in most studies the wall is single-valued in the whole window.

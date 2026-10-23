@@ -16,6 +16,7 @@ python step2_persistence.py GdFeCo_B1743_550mA_15may17 --row-mean --eps 0.5 1 1.
 python step7_roughness.py GdFeCo_B1743_550mA_15may17 --from-h --every 36 --rmin 25
 python step8_crossover.py GdFeCo_B1743_550mA_15may17
 python step10_universality.py GdFeCo_B1743_550mA_15may17
+python step11_overhangs.py GdFeCo_B1743_550mA_15may17   # run 2026-10-23
 ```
 
 ## Wall extraction and checks
@@ -76,6 +77,10 @@ Step 7 was run with `--from-h` instead: on h(y,t) as measured, without rotation 
 - **ζ_eff(ℓ)** of the local width (`fig_crossover.png`, panel 3): ≈ 1.2–1.35 for ℓ = 0.5–3 µm, ≈ 0.9 for 5–15 µm, then falls to 0.1–0.5 above ~20 µm (finite wall, 42 µm). In `fig_universality.png` w²(ℓ) follows the qEW slope (ζ = 1.25) up to ~4 µm.
 - **Crossover l₀** (`step8`): 9.2 µm from the local width (bootstrap 7.9–10.5, variants 1.5–150), 7.6 µm from the global S(q) (variants 6.7–60), 26.6 µm from the local slope; l_tilt = 19.1 µm. **l₀ is not determined: ≈ 8–27 µm.**
 - **Height distribution** (h, `--from-h`): skewness −0.14 ± 0.12 on the base plane, +0.19 ± 0.10 in 5 µm windows (Study 10: −0.6 ± 0.1); excess kurtosis +3.1 in 5 µm windows.
+
+## Overhangs (step 11, run 2026-10-23)
+
+Run on `contours.npz` of the failed base-plane step 7 (`step7_rotated_failed.log`); step 11 rotates every segment to its own axis, so the global tilt does not enter. P_ov(ℓ) = 0.01 at 5 µm, 0.02 at 11 µm, 0.04 at 22 µm, 0.08 at 39 µm (the largest scale); **P_ov = 0.01–0.02 at the step8 breaks (7.6–9.2 µm)** and never 1/2 (l₀_geom > 39 µm). Overhangs > 3 px on the base plane: one every 600 µm. The wall is single-valued at all measured scales, so whatever bends w²(ℓ) here is not the overhang scale l₀.
 
 ## qEW or qKPZ below l₀
 
