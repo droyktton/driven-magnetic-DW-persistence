@@ -282,16 +282,19 @@ for D in args.dirs:
     # B
     Ls_um = [l for l in (2.0, 4.0, 8.0, 16.0) if l < l0] if kk != 1.0 else [16, 32, 64, 128]
     Ls_px = [l / kk for l in Ls_um] if kk != 1.0 else Ls_um
-    h = np.load(os.path.join(D, "h_xt_sub.npy"))
-    adv = np.nanmean(h[0]) - np.nanmean(h[-1])
-    v_mean = abs(adv) / (h.shape[0] - 1)
     B = {}
-    if tiff:
+    static = meta.get("static_walls", False)            # independent snapshots (lps_walls.py): no h(x, t), no part B
+    if not static:
+        h = np.load(os.path.join(D, "h_xt_sub.npy"))
+        adv = np.nanmean(h[0]) - np.nanmean(h[-1])
+        v_mean = abs(adv) / (h.shape[0] - 1)
+    if tiff and not static:
         dts = sorted({max(5, int(round(a / v_mean / 5)) * 5) for a in (2, 5, 15)})
         B["contour"] = analyse_b(segments_contour(D, Ls_px, dts, True), kk)
         B["contour, no defect mask"] = analyse_b(segments_contour(D, Ls_px, dts, False), kk)
-    dts_h = sorted({max(1, int(round(a / v_mean))) for a in (2, 5, 15)})
-    B["h(x)"] = analyse_b(segments_h(D, [max(4, int(round(l))) for l in Ls_px], dts_h), kk)
+    if not static:
+        dts_h = sorted({max(1, int(round(a / v_mean))) for a in (2, 5, 15)})
+        B["h(x)"] = analyse_b(segments_h(D, [max(4, int(round(l))) for l in Ls_px], dts_h), kk)
     print("B. normal velocity vs local orientation: Lambda = lambda/v (0 elastic qEW, 1 isotropic, >>1 qKPZ),"
           " R = |Lambda|<m_L^2>/2")
     for meth, res in B.items():
@@ -335,7 +338,7 @@ for D in args.dirs:
     ax[1].set_xlabel(f"lower end of the fit [{A['unit']}] (upper end l0)"); ax[1].set_ylabel("ζ"); ax[1].set_title("A. ζ below l0")
     ph = np.arange(-55, 56, 10)
     meth = "contour" if "contour" in B else "h(x)"
-    for (L, dt), f in sorted(B[meth].items()):
+    for (L, dt), f in sorted(B.get(meth, {}).items()):
         if dt == sorted({k[1] for k in B[meth]})[len({k[1] for k in B[meth]}) // 2]:
             ax[2].errorbar(ph, f["curve"][0], f["curve"][1], fmt="o-", ms=3, label=f"L = {f['L_um']:.0f}")
     g = np.radians(ph)

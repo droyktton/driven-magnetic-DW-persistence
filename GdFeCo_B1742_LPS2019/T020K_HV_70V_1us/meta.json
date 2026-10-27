@@ -1,0 +1,10 @@
+{
+ "source": "/home/koltona/MOKEdata_local/LPS2019_B1742/DWGeometryvsTemperature/ImagesForRoughnessMeasurements/T020K_DWgeometry_HV_70V_1us",
+ "um_per_px": 0.171,
+ "n_walls": 51,
+ "len_px": [
+  182,
+  835
+ ],
+ "static_walls": true
+}
