@@ -1,0 +1,10 @@
+{
+ "src": "/home/koltona/MOKEdata_local/LPS2019_B1742/DWGeometryvsTemperature/ImagesForRoughnessMeasurements/T220K_DWgeometry_Kepco_7p06A_2s",
+ "n_frames": 55,
+ "theta": 125.54486096692418,
+ "sigma": 3.0,
+ "um_per_px": 0.171,
+ "adv_top_median": 0.18331680532931777,
+ "adv_bot_median": 5.405465311685014,
+ "valid_median": 0.5631781589079454
+}

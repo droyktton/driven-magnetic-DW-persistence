@@ -1,0 +1,10 @@
+{
+ "src": "/home/koltona/MOKEdata_local/LPS2019_B1742/DWGeometryvsTemperature/ImagesForRoughnessMeasurements/T260K_DWgeometry_HP_40V_2ms",
+ "n_frames": 63,
+ "theta": 122.40029578351223,
+ "sigma": 3.0,
+ "um_per_px": 0.171,
+ "adv_top_median": 0.1558095669553359,
+ "adv_bot_median": 5.310015685322824,
+ "valid_median": 0.559957552175451
+}

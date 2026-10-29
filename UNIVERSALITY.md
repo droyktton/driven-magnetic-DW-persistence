@@ -52,6 +52,7 @@ Two independent tests are therefore used, both measured on the walls themselves.
 | 11 | P7925, 0.04 A, wall barely moves (scale assumed) | 0.15 | 26 (5–26, no clean break) | 0.77 (0.76–0.79) | 0.89 (no break in the field) | 1700 / 3714 | 0.65 (0.07–1.23) | 0.09 (−0.44–0.61) | 0.17 |
 | 16 | GdFeCo B1743, 550 mA (scale assumed; step 7 `--from-h`, no fold exclusion) | 0.75 | 9 (8–27, not bracketed) | 0.83 (0.80–0.86) | 0.90 (no break in the field) | 44 / 152 | 0.46 (0.27–0.81) | 0.43 (0.18–1.53) | 0.18 |
 | 17 | GdFeCo B1743, 500 mA, Feb 2017 (scale assumed; 108 µm wall) | 0.31 | 49 (10–49; P_ov(l×) ≈ 0.1, not the overhang scale) | 0.94 (0.92–0.95) | 1.02 (break at the end of the range) | 1743 / 6893 | 0.74 (0.26–1.66) | 0.51 (0.39–0.76) | 0.18 |
+| 18 | GdFeCo B1742, 20–260 K, pulses (L. Albornoz; 10 series, static walls; Λ from 6 full-frame series at 220–260 K) | pulsed | 11–28 (all bracketed) | 0.90–1.15 | 0.90–1.36 (free) | 7–171 / 312–2080 | — | 0.13–0.81 (one pulse; 75/85 V steps ≈ l×) | 0.11 |
 
 Notes on the table:
 - **Errors:** 16–84 % block-bootstrap intervals.
@@ -108,6 +109,7 @@ Figures: `fig_universality.png` in each study; Studies 1–7 in `0_42A_20s_20x_5
 | 11 | 26 | 0.21 | 46 (44–59) | 0.33 | 72 | no clean break |
 | 16 | 9 | 0.02 | > 39 | 0.04 | 600 | break ≪ l₀^geom (break not bracketed) |
 | 17 | 49 | 0.10 | > 100 | ≈ 0.1 | 450 | break < l₀^geom |
+| 18 | 11–28 | 0.00–0.04 | > 57–235 | — | 225–15500 | break ≪ l₀^geom (6 series, 220–260 K) |
 
 \* reached only with windows longer than half the wall, where one large fold can dominate.
 

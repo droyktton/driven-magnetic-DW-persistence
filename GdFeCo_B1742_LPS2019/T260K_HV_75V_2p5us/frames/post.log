@@ -1,0 +1,24 @@
+=== T260K_HV_75V_2p5us: 59 frames, 56 single pulses, median advance 9.4 um/pulse, 9 sweeps
+   B all      L =    2 um: Lambda = +0.16 (+0.11 to +0.19), R = 0.009, n = 14143
+   B all      L =    4 um: Lambda = +0.15 (+0.10 to +0.20), R = 0.007, n = 7663
+   B all      L =    8 um: Lambda = +0.16 (+0.06 to +0.25), R = 0.005, n = 3613
+   B all      L =   16 um: Lambda = +0.36 (+0.18 to +0.55), R = 0.007, n = 1701
+   B backward L =    2 um: Lambda = +0.21 (+0.17 to +0.27), R = 0.012, n = 8079
+   B backward L =    4 um: Lambda = +0.24 (+0.18 to +0.29), R = 0.011, n = 4377
+   B backward L =    8 um: Lambda = +0.30 (+0.22 to +0.38), R = 0.010, n = 2063
+   B backward L =   16 um: Lambda = +0.71 (+0.53 to +0.95), R = 0.015, n = 970
+   B forward  L =    2 um: Lambda = +0.09 (+0.03 to +0.15), R = 0.005, n = 6064
+   B forward  L =    4 um: Lambda = +0.06 (-0.03 to +0.14), R = 0.003, n = 3286
+   B forward  L =    8 um: Lambda = -0.00 (-0.16 to +0.16), R = 0.000, n = 1550
+   B forward  L =   16 um: Lambda = +0.03 (-0.29 to +0.28), R = 0.001, n = 731
+   memory r(l) (0 same shape, 1 independent); rows |d<h>| [um], columns l = 1 2 4 8 16 32 um
+     same sweep    8- 16 um (n=  48):  1.00  1.01  1.00  0.95  0.83  0.64
+     same sweep   16- 32 um (n=  78):  1.00  1.00  1.01  1.00  0.98  0.85
+     same sweep   32- 64 um (n=  67):  1.00  1.01  1.02  1.04  1.01  0.90
+     other sweep   0-  1 um (n=  33):  0.97  0.95  0.96  0.95  0.95  0.85
+     other sweep   1-  2 um (n=  38):  0.97  0.94  0.94  0.91  0.93  0.92
+     other sweep   2-  4 um (n=  62):  0.98  0.96  0.94  0.90  0.88  0.87
+     other sweep   4-  8 um (n= 123):  1.00  0.99  0.98  0.97  0.89  0.88
+     other sweep   8- 16 um (n= 236):  1.00  1.01  1.00  0.99  0.98  0.97
+     other sweep  16- 32 um (n= 426):  1.00  1.00  1.00  0.99  0.99  1.00
+     other sweep  32- 64 um (n= 472):  1.00  1.00  1.01  1.01  1.01  1.03

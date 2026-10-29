@@ -1,0 +1,5 @@
+{
+ "um_per_px": 0.171,
+ "source": "lps_frames.py",
+ "moving_wall_only": true
+}

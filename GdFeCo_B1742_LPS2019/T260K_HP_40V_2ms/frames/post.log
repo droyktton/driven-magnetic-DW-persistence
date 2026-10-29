@@ -1,0 +1,26 @@
+=== T260K_HP_40V_2ms: 63 frames, 60 single pulses, median advance 5.3 um/pulse, 7 sweeps
+   B all      L =    2 um: Lambda = +0.30 (+0.25 to +0.35), R = 0.036, n = 14817
+   B all      L =    4 um: Lambda = +0.34 (+0.28 to +0.40), R = 0.040, n = 8068
+   B all      L =    8 um: Lambda = +0.40 (+0.32 to +0.50), R = 0.040, n = 3816
+   B all      L =   16 um: Lambda = +0.46 (+0.33 to +0.63), R = 0.030, n = 1790
+   B backward L =    2 um: Lambda = +0.33 (+0.26 to +0.41), R = 0.035, n = 6493
+   B backward L =    4 um: Lambda = +0.38 (+0.28 to +0.48), R = 0.037, n = 3533
+   B backward L =    8 um: Lambda = +0.47 (+0.34 to +0.62), R = 0.037, n = 1668
+   B backward L =   16 um: Lambda = +0.51 (+0.32 to +0.75), R = 0.027, n = 783
+   B forward  L =    2 um: Lambda = +0.31 (+0.25 to +0.38), R = 0.041, n = 8322
+   B forward  L =    4 um: Lambda = +0.33 (+0.25 to +0.39), R = 0.042, n = 4538
+   B forward  L =    8 um: Lambda = +0.40 (+0.30 to +0.51), R = 0.044, n = 2149
+   B forward  L =   16 um: Lambda = +0.52 (+0.39 to +0.68), R = 0.039, n = 1007
+   memory r(l) (0 same shape, 1 independent); rows |d<h>| [um], columns l = 1 2 4 8 16 32 um
+     same sweep    2-  4 um (n=   4):  0.95  0.94  0.89  0.77  0.66  0.50
+     same sweep    4-  8 um (n=  51):  0.99  0.97  0.92  0.84  0.75  0.52
+     same sweep    8- 16 um (n=  69):  1.00  1.00  0.99  0.97  0.93  0.76
+     same sweep   16- 32 um (n= 109):  1.00  1.00  1.01  1.03  0.99  0.92
+     same sweep   32- 64 um (n= 108):  1.00  1.01  1.02  1.02  1.04  1.05
+     other sweep   0-  1 um (n=  39):  0.99  0.97  0.91  0.86  0.81  0.71
+     other sweep   1-  2 um (n=  33):  0.99  0.98  0.95  0.94  0.97  0.87
+     other sweep   2-  4 um (n=  83):  0.99  0.99  1.00  0.97  0.97  0.89
+     other sweep   4-  8 um (n= 146):  1.00  0.99  0.98  0.96  0.91  0.85
+     other sweep   8- 16 um (n= 278):  1.00  1.00  0.99  0.97  0.96  0.91
+     other sweep  16- 32 um (n= 456):  1.00  1.00  1.00  1.00  0.98  0.95
+     other sweep  32- 64 um (n= 509):  1.00  1.00  1.00  1.01  1.01  0.98
