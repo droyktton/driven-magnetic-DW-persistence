@@ -1,0 +1,44 @@
+{
+  "fps": 0.5,
+  "um_per_px": 0.136,
+  "n_frames_video": 864,
+  "frame_first": 0,
+  "frame_last": 863,
+  "height": 2048,
+  "width": 966,
+  "source": "tiff",
+  "tiff_dir": "/home/koltona/Downloads/VincentData/slow dynamics 11_19",
+  "seq": "sequence50",
+  "sample": "CoFeB MAR007, t = 0.7 nm, room temperature",
+  "current_A": 0.034,
+  "field_uT": 8.908000000000001,
+  "coil_mT_per_A": 0.262,
+  "dark_reference": "/tmp/claude-1000/-home-koltona-Codigos-driven-magnetic-DW-persistence/01669638-d6e0-4e1f-802a-527f01f35414/scratchpad/cofeb13/dark_const.npy",
+  "threshold": -63.493350982666016,
+  "adaptive_threshold": true,
+  "threshold_range": [
+    -252.5334243774414,
+    -44.709009647369385
+  ],
+  "sigma": 2.0,
+  "core_erode": 110,
+  "min_area": 1000,
+  "margin": 5,
+  "median_x": 3,
+  "rows_used": [
+    686,
+    1652
+  ],
+  "max_fail": 0.02,
+  "frac_interpolated": 0.00036543401579633466,
+  "tilt_deg_first_last": [
+    20.147307590242413,
+    21.91892056243543
+  ],
+  "overhang_rows_mean": 74.26851851851852,
+  "frac_rows_front_ne_area": 0.07688252434629246,
+  "geometry": "image flipped left-right: switched domain (central wall) on the left, wall moving to +x; h = W-1-x_eff (switched area per row), columns of h = image rows y0..y1-1; domains nucleated at the disk border are ignored",
+  "warnings": [
+    "the mean <h> moves backward in 37 steps"
+  ]
+}
